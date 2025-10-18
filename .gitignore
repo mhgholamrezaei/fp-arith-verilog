@@ -1,0 +1,42 @@
+# Apptainer container files (large binary files)
+apptainer/
+*.sif
+*.img
+*.sqsh
+
+# VCD waveform files
+vcd/
+*.vcd
+*.fst
+*.saif
+
+# Build artifacts
+obj_dir/
+*.o
+*.a
+*.so
+*.exe
+main
+
+# Log files
+*.log
+test_output.log
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
