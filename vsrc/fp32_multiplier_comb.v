@@ -19,7 +19,8 @@ module fp32_multiplier_comb (
 
     // Internal wires matching the original implementation
     wire sign, product_round, normalised, zero;
-    wire [8:0] exponent, sum_exponent;
+    wire [8:0] exponent;
+    wire [7:0] sum_exponent;
     wire [22:0] product_mantissa;
     wire [23:0] operand_a, operand_b;
     wire [47:0] product, product_normalised;
@@ -56,16 +57,40 @@ module fp32_multiplier_comb (
     assign product_normalised = normalised ? product : product << 1;
     
     // Final Mantissa
-    assign product_mantissa = product_normalised[46:24] + (product_normalised[23] & product_round);
+    // Use adder_nbit to sum the mantissa for correct rounding
+    wire [22:0] mantissa_base;
+    wire [22:0] mantissa_rounded;
+    assign mantissa_base = product_normalised[46:24];
+    adder_nbit #(.WIDTH(23)) u_mantissa_adder (
+        .A(mantissa_base),
+        .B({22'd0, (product_normalised[23] & product_round)}),
+        .Sum(mantissa_rounded)
+    );
+    assign product_mantissa = mantissa_rounded;
     
     // Zero detection
     assign zero = exception ? 1'b0 : (product_mantissa == 23'd0) ? 1'b1 : 1'b0;
     
     // Sum of exponents
-    assign sum_exponent = a[30:23] + b[30:23];
+    // Use adder_nbit for summing exponents
+    adder_nbit #(.WIDTH(8)) u_exponent_adder (
+        .A(a[30:23]),
+        .B(b[30:23]),
+        .Sum(sum_exponent)
+    );
     
     // Final exponent calculation
-    assign exponent = sum_exponent - 8'd127 + normalised;
+    // assign exponent = sum_exponent - 8'd127 + normalised;
+    // Use adder_nbit to implement exponent calculation
+    wire [8:0] normalised_bias;
+    assign normalised_bias = normalised ? 9'h82 : 9'h81;
+    wire [8:0] exponent_sum;
+    adder_nbit #(.WIDTH(9)) u_exponent_final_adder (
+        .A(sum_exponent),
+        .B(normalised_bias),
+        .Sum(exponent_sum)
+    );
+    assign exponent = exponent_sum;
     
     // Overflow detection: If overall exponent is greater than 255 then Overflow condition
     assign overflow = ((exponent[8] & !exponent[7]) & !zero);
