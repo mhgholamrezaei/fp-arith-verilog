@@ -292,82 +292,25 @@ assign result =
 ## Testing and Verification
 
 ### Test Framework
-- **Verilator Integration**: C++ test harness with Verilog simulation
-- **Golden Reference**: Native C++ floating-point multiplication
-- **VCD Generation**: Waveform files for debugging
-- **Comprehensive Coverage**: Normal, special, and edge cases
+- **Verilator & C++ Testbench**: Simulation of Verilog code driven by a C++ harness.
+- **Reference Checking**: Each result is compared against native hardware float multiplication in C++.
+- **Waveform Output**: Generates VCD files to enable waveform debugging via GTKWave.
+- **Broad Scenario Coverage**: Validates normal operation, as well as boundary and special values.
 
-### Test Cases
-- Normal number multiplication
-- Zero handling
-- Infinity propagation
-- NaN handling
-- Overflow/underflow detection
-- Sign combinations
+### Test Coverage
+- All classes of IEEE-754 scenarios:
+  - Normal × Normal numbers
+  - Zero × Anything, Anything × Zero
+  - Infinity × Anything, Anything × Infinity
+  - NaN × Anything, Anything × NaN
+  - Overflow and underflow generation
+  - Sign bit combinatorics
 
-### Verification Results
-- **Test Count**: 10 random test cases per run
-- **Success Rate**: 100% (all tests pass)
-- **Accuracy**: Exact match with golden reference
-- **Performance**: Single-cycle combinational operation
+### Verification Summary
+- **Default Test Count**: 1000 random cases per run (configurable with `-n`)
+- **Edge/Corner Cases**: All special cases tested using vector files (`-f`)
+- **Pass Rate**: 100% alignment with reference (as of latest runs)
+- **Operational Speed**: Combinational module – results after a single simulated evaluation
 
-## File Structure
 
-```
-fp-arith-verilog/
-├── doc/
-│   └── fp32_multiplier_documentation.md
-├── src/
-│   ├── fp_multiplier.h          # C++ test harness
-│   ├── fp_utils.h               # Utility functions
-│   └── main.cpp                 # Test driver
-├── vsrc/
-│   ├── fp32_multiplier.v        # Top-level module
-│   ├── fp32_multiplier_comb.v   # Combinational logic
-│   ├── multiplier_nbit.v        # Custom multiplier
-│   ├── adder_nbit.v             # Custom adder
-│   ├── adder_1bit.v             # Single-bit adder
-│   └── maj3.v                   # Majority function
-├── scripts/
-│   ├── clean.sh                 # Clean build artifacts
-│   ├── init.tcl                 # GTKWave initialization
-│   ├── run_all.sh               # Complete test suite
-│   └── run_wave.sh              # Waveform viewer
-├── apptainer/
-│   ├── apptainer_run.sh          # Container runner
-│   ├── verilator.def             # Container definition
-│   └── verilator.sif             # Container image (852MB)
-├── Makefile                      # Build system
-├── README.md                     # Project overview
-└── .gitignore                    # Git ignore rules
-```
-
-## Build and Run Instructions
-
-### Prerequisites
-- Apptainer/Singularity for container support
-- Verilator (via container)
-- GTKWave for waveform viewing
-
-### Build Commands
-```bash
-# Clean previous builds
-make clean
-
-# Build with Verilator
-make all
-
-# Run tests
-make run
-
-# View waveforms
-make view-vcd
-```
-
-### Container Usage
-```bash
-# Run commands in container
-./apptainer/apptainer_run.sh make all
-./apptainer/apptainer_run.sh make run
-```
 
