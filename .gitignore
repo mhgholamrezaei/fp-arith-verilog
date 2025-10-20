@@ -40,3 +40,6 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
+
+# Executables
+fp32_multiplier_test

@@ -1,0 +1,6 @@
+# NaN cases
+nan 1.0
+1.0 nan
+nan nan
+nan inf
+inf nan

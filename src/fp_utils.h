@@ -68,4 +68,20 @@ public:
         
         std::cout << " (" << toFloat(e) << ")" << std::endl;
     }
+
+    //  Checks if two FpType are equal
+    static bool is_equal(const FpType &a, const FpType &b, float eps = 1e-6f) {
+        float fa = toFloat(a);
+        float fb = toFloat(b);
+
+        // Treat both NaNs as equal
+        if (std::isnan(fa) && std::isnan(fb)) return true;
+
+        // Both infinities must have same sign
+        if (std::isinf(fa) && std::isinf(fb)) 
+            return std::signbit(fa) == std::signbit(fb);
+
+        // Use relative comparison (also catches zeros)
+        return std::fabs(fa - fb) <= eps * std::fmax(1.0f, std::fmax(std::fabs(fa), std::fabs(fb)));
+    }
 };

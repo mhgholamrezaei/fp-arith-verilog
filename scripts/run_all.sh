@@ -3,7 +3,7 @@
 
 set -e
 
-echo "FP32 Multiplier Complete Test Suite"
+echo "INFO: FP32 Multiplier Complete Test Suite"
 echo "===================================="
 
 # Check if Apptainer is available
@@ -20,21 +20,22 @@ if [ ! -f "./apptainer/verilator.sif" ]; then
     exit 1
 fi
 
-echo "Using Apptainer container for Verilator..."
+echo "INFO: Using Apptainer container for Verilator..."
 
 # Clean previous builds
-echo "Cleaning previous builds..."
+echo "INFO: Cleaning previous builds..."
 ./apptainer/apptainer_run.sh make clean
 
 # Build the FP32 multiplier test
-echo "Building FP32 multiplier test..."
+echo "INFO: Building FP32 multiplier test..."
 ./apptainer/apptainer_run.sh make all
 
-# Run the test
-echo "Running FP32 multiplier tests..."
-./apptainer/apptainer_run.sh make run
+# Copy fp32_multiplier_test to the current directory
+cp ./obj_dir/fp32_multiplier_test .
 
+# Run the test
+echo "INFO: Running FP32 multiplier tests..."
+./apptainer/apptainer_run.sh ./fp32_multiplier_test -n 100
 
 echo ""
-echo "FP32 multiplier test suite completed successfully!"
-echo "You can also run './apptainer/apptainer_run.sh make view-vcd' to view waveforms."
+echo "INFO: FP32 multiplier test suite completed successfully!"

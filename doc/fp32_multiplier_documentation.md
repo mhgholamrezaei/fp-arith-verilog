@@ -46,6 +46,17 @@ Bit:  31    30-23    22-0
 | 255 | 0 | ±∞ |
 | 255 | ≠ 0 | NaN |
 
+## Exception Handling
+
+| Condition                                               | Result      | Description                                           |
+|---------------------------------------------------------|-------------|-------------------------------------------------------|
+| `inf * 0` or `0 * inf`                                  | `NaN`       | Invalid operation: infinity multiplied by zero        |
+| `NaN * x` or `x * NaN`                                  | `NaN`       | Any operation with NaN results in NaN                 |
+| Result magnitude > maximum finite (overflow)            | `+inf`      | Overflow: result rounds to positive infinity          |
+| Result magnitude < minimum normal (underflow)           | `0`         | Underflow: result rounds to zero                      |
+
+
+
 ## Implementation Architecture
 
 ### Module Hierarchy
@@ -91,7 +102,9 @@ Final Result Assembly
 ### Exception Detection
 
 ```verilog
-assign exception = (&a[30:23]) | (&b[30:23]);
+wire a_is_exception = (&a[30:23]);
+wire b_is_exception = (&b[30:23]);
+assign exception = a_is_exception | b_is_exception;
 ```
 
 **Explanation:**
@@ -99,6 +112,34 @@ assign exception = (&a[30:23]) | (&b[30:23]);
 - `&b[30:23]` performs AND reduction on the exponent field of operand B
 - Returns `1` if either operand has exponent = 255 (NaN or ±∞)
 - Uses OR operation to detect if either input is exceptional
+
+### NaN Detection
+
+```verilog
+wire a_is_nan, b_is_nan;
+assign a_is_nan = (&a[30:23]) & (|a[22:0]);
+assign b_is_nan = (&b[30:23]) & (|b[22:0]);
+assign nan = a_is_nan | b_is_nan | (a_is_zero & b_is_exception) | (b_is_zero & a_is_exception);
+```
+
+**Explanation:**
+- **NaN Input**: Exponent = 255 AND mantissa ≠ 0
+- **Infinity × Zero**: Results in NaN (invalid operation)
+- **NaN Propagation**: Any operation with NaN results in NaN
+- Uses IEEE-754 priority ordering for special cases
+
+### Zero Detection
+
+```verilog
+wire a_is_zero = ~|a[30:23] & ~|a[22:0];
+wire b_is_zero = ~|b[30:23] & ~|b[22:0];
+assign zero = exception ? 1'b0 : (product_normalised[47:24] == 24'd0) ? 1'b1 : 1'b0;
+```
+
+**Explanation:**
+- **Input Zero**: Exponent = 0 AND mantissa = 0
+- **Product Zero**: Upper 24 bits of normalized product are zero
+- **Exception Override**: Zero detection disabled during exceptional cases
 
 ### Sign Calculation
 
@@ -141,7 +182,7 @@ multiplier_nbit #(.WIDTH(24), .IMPL_TYPE(IMPL_TYPE)) u_multiplier (
 ### Normalization
 
 ```verilog
-assign normalised = product[47] ? 1'b1 : 1'b0;
+assign normalised = product[47];
 assign product_normalised = normalised ? product : product << 1;
 ```
 
@@ -159,49 +200,71 @@ assign product_mantissa = product_normalised[46:24] + (product_normalised[23] & 
 
 **Explanation:**
 - Round-to-nearest-even algorithm
-- `product_round` detects non-zero bits in rounding region
-- Adds 1 to mantissa if rounding bit is set AND there are non-zero bits below
+- `product_round` detects non-zero bits in rounding region (bits 22:0)
+- Adds 1 to mantissa if rounding bit (bit 23) is set AND there are non-zero bits below
+
+### Renormalization
+
+```verilog
+wire renormalized = product_mantissa[23] ? 1'b1 : 1'b0;
+```
+
+**Explanation:**
+- After rounding, mantissa may overflow from 23 to 24 bits
+- If bit 23 is set, mantissa needs right-shift and exponent increment
+- Handles rare case where rounding causes mantissa overflow
 
 ### Exponent Calculation
 
 ```verilog
-assign sum_exponent = a[30:23] + b[30:23];
-assign exponent = sum_exponent - 8'd127 + normalised;
+adder_nbit #(.WIDTH(9)) u_exponent_adder (
+    .A({1'b0, a[30:23]}),
+    .B({1'b0, b[30:23]}),
+    .Sum(sum_exponent)
+);
+assign exponent = sum_exponent - 8'd127 + normalised + renormalized;
 ```
 
 **Explanation:**
-- Add exponents of both operands
+- Uses custom 9-bit adder for exponent arithmetic
+- Add exponents of both operands (extended to 9 bits)
 - Subtract bias (127) to get true exponent
-- Add 1 if normalization occurred (left shift)
+- Add 1 for normalization and 1 for renormalization if needed
 
 ### Overflow/Underflow Detection
 
 ```verilog
-assign overflow = ((exponent[8] & !exponent[7]) & !zero);
+wire exp_gt_255 = exponent[8];                   // >255 ⇒ bit8=1
+wire exp_eq_255 = ~exponent[8] & (&exponent[7:0]); // 255 ⇒ bit8=0, rest=all 1
+assign overflow = !zero & (exp_gt_255 | exp_eq_255);
 assign underflow = ((exponent[8] & exponent[7]) & !zero) ? 1'b1 : 1'b0;
 ```
 
 **Explanation:**
-- **Overflow**: Exponent > 254 (becomes ±∞)
+- **Overflow**: Exponent ≥ 255 (becomes ±∞)
 - **Underflow**: Exponent < 1 (becomes ±0)
 - Uses 9-bit exponent for detection (bit 8 indicates overflow/underflow)
+- Zero results bypass overflow/underflow detection
 
 ### Final Result Assembly
 
 ```verilog
-assign result = exception ? 32'd0 : 
-               zero ? {sign, 31'd0} : 
-               overflow ? {sign, 8'hFF, 23'd0} : 
-               underflow ? {sign, 31'd0} : 
-               {sign, exponent[7:0], product_mantissa};
+assign result = 
+                nan        ? {sign, 8'hFF, 23'h400000} :                    // NaN
+                overflow   ? {sign, 8'hFF, 23'd0} :                // Infinity
+                underflow  ? {sign, 31'd0} :                        // Zero (underflow)
+                zero       ? {sign, 31'd0} :                        // Zero (normal)
+                exception  ? {sign, 8'hFF, 23'd0} :                  // Infinity (inf × inf, inf × normal)
+                {sign, exponent[7:0], product_mantissa[22:0]};      // Normal result
 ```
 
 **Explanation:**
-- **Exception**: Return 0 (NaN/∞ handling)
-- **Zero**: Return ±0
-- **Overflow**: Return ±∞ (exponent = 255, mantissa = 0)
-- **Underflow**: Return ±0
-- **Normal**: Return properly formatted result
+- **IEEE-754 Priority Order**: NaN > Overflow > Underflow > Zero > Exception > Normal
+- **NaN**: Exponent = 255, mantissa = 0x400000 (quiet NaN)
+- **Infinity**: Exponent = 255, mantissa = 0
+- **Zero**: Exponent = 0, mantissa = 0
+- **Exception**: Infinity × Infinity or Infinity × Normal = Infinity
+- **Normal**: Properly formatted result with correct sign, exponent, and mantissa
 
 ## Custom Arithmetic Units
 

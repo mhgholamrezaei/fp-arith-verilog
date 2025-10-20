@@ -14,139 +14,105 @@ public:
     virtual FpType run(const FpType &a, const FpType &b) = 0;
 };
 
-// Floating point multiplication with special case handling
-// Based on IEEE-754 standard and Verilog implementation
-class FpMultiplierImpl : public FpMultiplier {
+class FpMultiplierEmulation : public FpMultiplier {
 public:
     // Multiply with special-case handling for zero, infinity, NaN, overflow, and underflow
     FpType run(const FpType &a, const FpType &b) override {
-        FpType r;
-
-        // Check special cases from exponent and mantissa
-        bool a_zero = (a.exponent == 0 && a.mantissa == 0);
-        bool b_zero = (b.exponent == 0 && b.mantissa == 0);
-        bool a_inf = (a.exponent == 0xFFu && a.mantissa == 0);
-        bool b_inf = (b.exponent == 0xFFu && b.mantissa == 0);
-        bool a_nan = (a.exponent == 0xFFu && a.mantissa != 0);
-        bool b_nan = (b.exponent == 0xFFu && b.mantissa != 0);
-
-        // Handle special cases first
-        if (a_zero || b_zero) {
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0;
-            r.mantissa = 0;
-            return r;
+        FpType result;
+        
+        // Sign calculation
+        result.sign = a.sign ^ b.sign;
+        
+        // Exception flag sets 1 if either one of the exponent is 255
+        bool a_is_exception = (a.exponent == 0xFF);
+        bool b_is_exception = (b.exponent == 0xFF);
+        bool exception = a_is_exception || b_is_exception;
+        
+        // Zero detection
+        bool a_is_zero = (a.exponent == 0) && (a.mantissa == 0);
+        bool b_is_zero = (b.exponent == 0) && (b.mantissa == 0);
+        
+        // NaN detection: NaN occurs when either operand is NaN (exp=255 with non-zero mantissa)
+        bool a_is_nan = (a.exponent == 0xFF) && (a.mantissa != 0);
+        bool b_is_nan = (b.exponent == 0xFF) && (b.mantissa != 0);
+        bool nan = a_is_nan || b_is_nan || (a_is_zero && b_is_exception) || (b_is_zero && a_is_exception);
+        
+        // Handle NaN case (highest priority)
+        if (nan) {
+            result.exponent = 0xFF;
+            result.mantissa = 0x400000; // Quiet NaN payload
+            return result;
         }
-
-        if (a_inf || b_inf) {
-            if (a_nan || b_nan) {
-                // NaN * anything = NaN
-                r.sign = a.sign ^ b.sign;
-                r.exponent = 0xFFu;
-                r.mantissa = 1; // non-zero mantissa for NaN
-                return r;
-            } else {
-                // inf * finite = inf
-                r.sign = a.sign ^ b.sign;
-                r.exponent = 0xFFu;
-                r.mantissa = 0;
-                return r;
-            }
-        }
-
-        if (a_nan || b_nan) {
-            // NaN * anything = NaN
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0xFFu;
-            r.mantissa = 1; // non-zero mantissa for NaN
-            return r;
-        }
-
-        // Exception flag sets 1 if either one of the exponent is 255 (0xFF)
-        bool exception = (a.exponent == 0xFFu) || (b.exponent == 0xFFu);
-        if (exception) {
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0;
-            r.mantissa = 0;
-            return r;
-        }
-
+        
         // Assigning significand values according to Hidden Bit
-        // If exponent is equal to zero then hidden bit will be 0, else it will be 1
-        uint32_t a_mantissa = (a.exponent != 0) ? ((1u << 23) | a.mantissa) : a.mantissa;
-        uint32_t b_mantissa = (b.exponent != 0) ? ((1u << 23) | b.mantissa) : b.mantissa;
-
-        // Calculating Product (24x24 -> up to 48-bit product)
-        uint64_t product = (uint64_t)a_mantissa * (uint64_t)b_mantissa;
-
-        // Check if product is normalized (48th bit set)
-        bool normalized = (product >> 47) & 1u;
+        uint32_t operand_a = (a.exponent != 0) ? (0x800000 | a.mantissa) : a.mantissa;
+        uint32_t operand_b = (b.exponent != 0) ? (0x800000 | b.mantissa) : b.mantissa;
         
-        // Assign normalized value based on 48th bit
-        uint64_t product_normalized = normalized ? product : product << 1;
-
-        // Calculate exponent: sum_exponent - 127 + normalized
-        int32_t sum_exponent = (int32_t)a.exponent + (int32_t)b.exponent;
+        // Calculate product (24x24 -> 48-bit)
+        uint64_t product = (uint64_t)operand_a * (uint64_t)operand_b;
         
-        // Check for overflow based on sum_exponent (before bias adjustment)
-        // If sum_exponent >= 382 (255 + 127), we'll have overflow after bias adjustment
-        if (sum_exponent >= 382) {
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0xFFu;
-            r.mantissa = 0;
-            return r;
-        }
-
-        // Calculate final exponent
-        int32_t exponent = sum_exponent - 127 + (normalized ? 1 : 0);
-
-        // Check for underflow
-        if (exponent <= 0) {
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0;
-            r.mantissa = 0;
-            return r;
-        }
-
+        // Normalization check
+        bool normalised = (product >> 47) & 1;
+        
+        // Adjust product if not normalized
+        uint64_t product_normalised = normalised ? product : product << 1;
+        
         // Product round: ending 22 bits are OR'ed for rounding operation
-        bool product_round = (product_normalized & 0x7FFFFFu) != 0;
-
-        // Final Mantissa: product_normalized[46:24] + (product_normalized[23] & product_round)
-        uint32_t product_mantissa = (product_normalized >> 24) & 0x7FFFFFu;
-        if ((product_normalized >> 23) & 1u) {
-            product_mantissa += product_round ? 1u : 0u;
+        bool product_round = (product_normalised & 0x7FFFFF) != 0;
+        
+        // Final Mantissa with rounding
+        uint32_t product_mantissa = ((product_normalised >> 24) & 0x7FFFFF) + (((product_normalised >> 23) & 1) & (product_round ? 1 : 0));
+        
+        // Check for renormalization
+        bool renormalized = (product_mantissa >> 23) & 1;
+        
+        // Zero detection
+        bool zero = exception ? false : ((product_normalised >> 24) == 0);
+        
+        // Sum of exponents
+        uint32_t sum_exponent = a.exponent + b.exponent;
+        
+        // Final exponent calculation
+        uint32_t exponent = sum_exponent - 127 + normalised + renormalized;
+        
+        // Overflow detection: If overall exponent is greater (or equal) to 255 then Overflow condition
+        bool exp_gt_255 = (exponent >> 8) & 1;  // >255 ⇒ bit8=1
+        bool exp_eq_255 = !((exponent >> 8) & 1) && ((exponent & 0xFF) == 0xFF);  // 255 ⇒ bit8=0, rest=all 1
+        bool overflow = !zero && (exp_gt_255 || exp_eq_255);
+        
+        // Underflow detection: If sum of both exponents is less than 127 then Underflow condition
+        bool underflow = ((exponent >> 8) & (exponent >> 7)) && !zero;
+        
+        // Final result - IEEE-754 priority order
+        if (overflow) {
+            result.exponent = 0xFF;
+            result.mantissa = 0;
+            return result;
         }
-
-        // Check for zero result
-        bool zero = (product_mantissa == 0);
-
-        // Set result based on conditions
+        
+        if (underflow) {
+            result.exponent = 0;
+            result.mantissa = 0;
+            return result;
+        }
+        
+        if (zero) {
+            result.exponent = 0;
+            result.mantissa = 0;
+            return result;
+        }
+        
         if (exception) {
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0;
-            r.mantissa = 0;
-        } else if (zero) {
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0;
-            r.mantissa = 0;
-        } else if (exponent >= 255) {
-            // Overflow
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0xFFu;
-            r.mantissa = 0;
-        } else if (exponent <= 0) {
-            // Underflow
-            r.sign = a.sign ^ b.sign;
-            r.exponent = 0;
-            r.mantissa = 0;
-        } else {
-            // Normal result
-            r.sign = a.sign ^ b.sign;
-            r.exponent = exponent;
-            r.mantissa = product_mantissa;
+            result.exponent = 0xFF;
+            result.mantissa = 0;
+            return result;
         }
-
-        return r;
+        
+        // Normal result
+        result.exponent = exponent & 0xFF;
+        result.mantissa = product_mantissa & 0x7FFFFF;
+        
+        return result;
     }
 };
 
@@ -173,14 +139,14 @@ public:
         Verilated::traceEverOn(true);
         trace = new VerilatedVcdC;
         dut->trace(trace, 99);
-        std::cout << "Opening VCD file: vcd/fp32_multiplier_test.vcd" << std::endl;
+        std::cout << "INFO: Opening VCD file: vcd/fp32_multiplier_test.vcd" << std::endl;
         trace->open("vcd/fp32_multiplier_test.vcd");
-        std::cout << "VCD file opened successfully" << std::endl;
+        std::cout << "INFO: VCD file opened successfully" << std::endl;
     }
     
     ~FpMultiplierVerilog() {
         if (trace) {
-            std::cout << "Closing VCD file" << std::endl;
+            std::cout << "INFO: Closing VCD file" << std::endl;
             trace->flush();
             trace->close();
             delete trace;
