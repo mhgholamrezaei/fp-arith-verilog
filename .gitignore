@@ -12,6 +12,7 @@ fp32_multiplier/vcd/
 *.saif
 
 # Build artifacts
+obj_dir/
 fp32_adder/obj_dir/
 fp32_multiplier/obj_dir/
 *.o
@@ -19,6 +20,10 @@ fp32_multiplier/obj_dir/
 *.so
 *.exe
 main
+Vfp32_*
+*.mk
+*.d
+*.gch
 
 # Log files
 *.log
