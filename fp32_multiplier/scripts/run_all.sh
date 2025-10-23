@@ -34,7 +34,13 @@ echo "INFO: Building FP32 multiplier test..."
 ../apptainer/apptainer_run.sh make all
 
 # Copy fp32_multiplier_test to the current directory
-cp ../obj_dir/fp32_multiplier_test .
+if [ -f "obj_dir/fp32_multiplier_test" ]; then
+    cp obj_dir/fp32_multiplier_test .
+    echo "INFO: Executable copied successfully"
+else
+    echo "ERROR: Executable not found in obj_dir/"
+    exit 1
+fi
 
 # Run the test
 echo "INFO: Running FP32 multiplier tests..."

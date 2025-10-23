@@ -18,12 +18,11 @@ SHARED_VSRC = ../shared/vsrc
 SHARED_SRC = ../shared/src
 
 # Source files
-VERILOG_SOURCES = $(VSRC_DIR)/fp32_adder.v \
-                  $(SHARED_VSRC)/adder_nbit.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
+VERILOG_SOURCES = $(VSRC_DIR)/fp32_adder.v  $(VSRC_DIR)/priority_encoder.v $(VSRC_DIR)/right_shifter.v $(VSRC_DIR)/left_shifter.v $(SHARED_VSRC)/adder_nbit.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
 CPP_SOURCES = $(SRC_DIR)/fp_adder_test.cpp
 
-# Output directories (relative to project root)
-OBJ_DIR = ../obj_dir
+# Output directories (relative to module directory)
+OBJ_DIR = obj_dir
 VCD_DIR = vcd
 
 # Main target executable
@@ -35,11 +34,10 @@ all: $(MAIN_TARGET)
 # Main FP32 adder test build with Verilator
 $(MAIN_TARGET): $(VERILOG_SOURCES) $(CPP_SOURCES) $(VCD_DIR)
 	@echo "Building FP32 adder test with Verilator..."
-	cd .. && $(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_TOP) \
-		-CFLAGS "-Ishared/src" \
-		fp32_adder/vsrc/fp32_adder.v \
-		shared/vsrc/adder_nbit.v shared/vsrc/adder_1bit.v shared/vsrc/maj3.v \
-		fp32_adder/src/fp_adder_test.cpp -o fp32_adder_test
+	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_TOP) \
+		-CFLAGS "-I../shared/src" \
+		$(VERILOG_SOURCES) \
+		$(SRC_DIR)/fp_adder_test.cpp -o fp32_adder_test
 	@echo "Compiling..."
 	cd $(OBJ_DIR) && make -f Vfp32_adder.mk
 	@echo "Adder build complete!"

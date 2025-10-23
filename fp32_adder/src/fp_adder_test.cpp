@@ -1,4 +1,4 @@
-#include "../shared/src/fp_utils.h"
+#include "../../shared/src/fp_utils.h"
 #include "fp_adder.h"
 #include <utility>
 #include <string>
@@ -20,7 +20,9 @@ private:
     float min_float = -std::numeric_limits<float>::max();
 
 public:
-    FpAdderTester() : gen(rd()), dis(min_float, max_float) {}
+    FpAdderTester() : gen(rd()), dis(min_float, max_float) {
+        srand(time(NULL));
+    }
 
     float random_float_in_range(float min, float max) {
         std::uniform_real_distribution<float> range_dis(min, max);

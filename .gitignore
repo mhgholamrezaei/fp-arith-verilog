@@ -15,6 +15,8 @@ fp32_multiplier/vcd/
 obj_dir/
 fp32_adder/obj_dir/
 fp32_multiplier/obj_dir/
+fp32_adder/fp32_adder_test
+fp32_multiplier/fp32_multiplier_test
 *.o
 *.a
 *.so

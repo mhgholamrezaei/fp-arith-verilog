@@ -10,18 +10,19 @@ module adder_nbit #(
 )(
     input [WIDTH-1:0] A,
     input [WIDTH-1:0] B,
+    input Cin = 1'b0,
     output [WIDTH-1:0] Sum
 );
 
     wire [WIDTH-1:0] Carry;
 
-    // Instantiate the first full adder with Cin = 0
+    // Instantiate the first full adder with input Cin
     adder_1bit #(
         .IMPL_TYPE(IMPL_TYPE)
     ) u_adder_1bit_0 (
         .A(A[0]),
         .B(B[0]),
-        .Cin(1'b0),    // Initialize Cin to 0
+        .Cin(Cin),     // Use input carry
         .Sum(Sum[0]),
         .Cout(Carry[0])
     );

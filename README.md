@@ -33,5 +33,5 @@
    ```
 
 # TODO 
- - implement fp32 addition
-
+- Goal: implement fp32 addition
+- implement fp32 adder for the general case 
