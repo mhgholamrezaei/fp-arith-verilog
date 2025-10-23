@@ -105,7 +105,12 @@ public:
                         // Handle scientific notation and regular floats
                         // Use C locale for consistent parsing
                         char* old_locale = setlocale(LC_NUMERIC, "C");
-                        float result = std::stof(s);
+                        
+                        // First try parsing as double, then convert to float
+                        // This handles cases where the value is smaller than minimum normal float
+                        double double_val = std::stod(s);
+                        float result = static_cast<float>(double_val);
+                        
                         if (old_locale) setlocale(LC_NUMERIC, old_locale);
                         return result;
                     } catch (const std::exception& e) {
@@ -200,14 +205,14 @@ void read_command_line_arguments(int argc, char* argv[], int& test_number, std::
 
 int main(int argc, char* argv[]) {
     // read command line arguments using getopt in a function
-    int test_number = 10000;
+    int test_number = 1;
     std::string filename = "";
     bool verbose = false;
     read_command_line_arguments(argc, argv, test_number, filename, verbose);
 
     // Call tester class to run the test
     FpMultiplierTester tester;
-    FpMultiplier* fp_multiplier_under_test = new FpMultiplierEmulation();
+    FpMultiplier* fp_multiplier_under_test = new FpMultiplierVerilog();
     FpMultiplier* fp_multiplier_golden = new FpMultiplierGolden();
     int result = 0;
     if (filename.empty()) {

@@ -164,16 +164,11 @@ public:
     }
     
     void clock_cycle() {
-        dut->clk = 0;
-        tick();
-        dut->clk = 1;
         tick();
     }
     
     void reset() {
-        dut->reset = 1;
-        clock_cycle();
-        dut->reset = 0;
+        dut->eval();
     }
     
     FpType run(const FpType &a, const FpType &b) override {
@@ -189,20 +184,7 @@ public:
         // Apply inputs to Verilog module
         dut->a = a_bits;
         dut->b = b_bits;
-        dut->start = 1;
         
-        // Wait for start to be processed
-        clock_cycle();
-        dut->start = 0;
-        
-        // Wait for computation to complete
-        int timeout = 0;
-        while (!dut->done && timeout < 100) {
-            clock_cycle();
-            timeout++;
-        }
-        
-        // Wait one more cycle for valid signal
         clock_cycle();
         
         // Get result and convert back to FpType
