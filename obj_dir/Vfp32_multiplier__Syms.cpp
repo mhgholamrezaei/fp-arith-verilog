@@ -1,0 +1,98 @@
+// Verilated -*- C++ -*-
+// DESCRIPTION: Verilator output: Symbol table implementation internals
+
+#include "Vfp32_multiplier__pch.h"
+#include "Vfp32_multiplier.h"
+#include "Vfp32_multiplier___024root.h"
+#include "Vfp32_multiplier_adder_nbit__W30.h"
+
+// FUNCTIONS
+Vfp32_multiplier__Syms::~Vfp32_multiplier__Syms()
+{
+}
+
+Vfp32_multiplier__Syms::Vfp32_multiplier__Syms(VerilatedContext* contextp, const char* namep, Vfp32_multiplier* modelp)
+    : VerilatedSyms{contextp}
+    // Setup internal state of the Syms class
+    , __Vm_modelp{modelp}
+    // Setup module instances
+    , TOP{this, namep}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__10__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[10].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__11__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[11].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__12__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[12].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__13__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[13].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__14__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[14].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__15__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[15].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__16__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[16].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__17__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[17].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__18__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[18].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__19__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[19].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__1__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[1].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__20__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[20].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__21__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[21].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__22__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[22].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__23__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[23].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__2__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[2].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__3__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[3].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__4__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[4].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__5__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[5].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__6__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[6].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__7__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[7].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__8__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[8].u_adder")}
+    , TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__9__KET____DOT__u_adder{this, Verilated::catName(namep, "fp32_multiplier.u_multiplier.multiplier_chain[9].u_adder")}
+{
+        // Check resources
+        Verilated::stackCheck(25);
+    // Configure time unit / time precision
+    _vm_contextp__->timeunit(-12);
+    _vm_contextp__->timeprecision(-12);
+    // Setup each module's pointers to their submodules
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__10__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__10__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__11__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__11__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__12__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__12__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__13__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__13__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__14__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__14__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__15__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__15__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__16__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__16__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__17__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__17__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__18__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__18__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__19__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__19__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__1__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__1__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__20__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__20__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__21__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__21__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__22__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__22__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__23__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__23__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__2__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__2__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__3__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__3__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__4__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__4__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__5__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__5__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__6__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__6__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__7__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__7__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__8__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__8__KET____DOT__u_adder;
+    TOP.__PVT__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__9__KET____DOT__u_adder = &TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__9__KET____DOT__u_adder;
+    // Setup each module's pointer back to symbol table (for public functions)
+    TOP.__Vconfigure(true);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__10__KET____DOT__u_adder.__Vconfigure(true);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__11__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__12__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__13__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__14__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__15__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__16__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__17__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__18__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__19__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__1__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__20__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__21__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__22__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__23__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__2__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__3__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__4__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__5__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__6__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__7__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__8__KET____DOT__u_adder.__Vconfigure(false);
+    TOP__fp32_multiplier__DOT__u_multiplier__DOT__multiplier_chain__BRA__9__KET____DOT__u_adder.__Vconfigure(false);
+}

@@ -1,5 +1,5 @@
-#include "fp_utils.h"
-#include "fp_multiplier.h"
+#include "../shared/src/fp_utils.h"
+#include "fp_adder.h"
 #include <utility>
 #include <string>
 #include <iostream>
@@ -10,8 +10,8 @@
 #include <clocale> // For setlocale
 #include <unistd.h> // For getopt
 
-// Test class for floating-point multiplication
-class FpMultiplierTester {
+// Test class for floating-point addition
+class FpAdderTester {
 private:
     std::random_device rd;
     std::mt19937 gen;
@@ -20,7 +20,7 @@ private:
     float min_float = -std::numeric_limits<float>::max();
 
 public:
-    FpMultiplierTester() : gen(rd()), dis(min_float, max_float) {}
+    FpAdderTester() : gen(rd()), dis(min_float, max_float) {}
 
     float random_float_in_range(float min, float max) {
         std::uniform_real_distribution<float> range_dis(min, max);
@@ -139,16 +139,16 @@ public:
     }
 
     // run the test vectors and compare the results
-    // fp_multiplier_under_test and fp_multiplier_golden as the dut and golden model
+    // fp_adder_under_test and fp_adder_golden as the dut and golden model
     // test_vectors as the test vectors
-    int run(FpMultiplier& fp_multiplier_under_test, FpMultiplier& fp_multiplier_golden, std::vector<std::pair<float, float>>& test_vectors, bool verbose) {
+    int run(FpAdder& fp_adder_under_test, FpAdder& fp_adder_golden, std::vector<std::pair<float, float>>& test_vectors, bool verbose) {
         int errors = 0;
         uint32_t i = 0;
         for (const auto& test_pair : test_vectors) {
             FpType a = FpUtil::fromFloat(test_pair.first);
             FpType b = FpUtil::fromFloat(test_pair.second);
-            FpType z = fp_multiplier_under_test.run(a, b);
-            FpType z_golden = fp_multiplier_golden.run(a, b);
+            FpType z = fp_adder_under_test.run(a, b);
+            FpType z_golden = fp_adder_golden.run(a, b);
             // compare results
             if (!FpUtil::is_equal(z, z_golden)) {
                 errors++;
@@ -165,15 +165,15 @@ public:
     }
     
     // get the file name, generate test vectors and call the run
-    int run(FpMultiplier& fp_multiplier_under_test, FpMultiplier& fp_multiplier_golden, const std::string& filename, bool verbose) {
+    int run(FpAdder& fp_adder_under_test, FpAdder& fp_adder_golden, const std::string& filename, bool verbose) {
         std::vector<std::pair<float, float>> test_vectors = custom_test_vectors(filename);
-        return run(fp_multiplier_under_test, fp_multiplier_golden, test_vectors, verbose);
+        return run(fp_adder_under_test, fp_adder_golden, test_vectors, verbose);
     }
 
     // get the test number, generate test vectors and call the run
-    int run(FpMultiplier& fp_multiplier_under_test, FpMultiplier& fp_multiplier_golden, uint32_t n, bool verbose) {
+    int run(FpAdder& fp_adder_under_test, FpAdder& fp_adder_golden, uint32_t n, bool verbose) {
         std::vector<std::pair<float, float>> test_vectors = random_test_vectors(n);
-        return run(fp_multiplier_under_test, fp_multiplier_golden, test_vectors, verbose);
+        return run(fp_adder_under_test, fp_adder_golden, test_vectors, verbose);
     }
 };
 
@@ -192,7 +192,7 @@ void read_command_line_arguments(int argc, char* argv[], int& test_number, std::
                 verbose = true;
                 break;
             case 'h':
-                std::cout << "Usage: ./main [-f <filename>] [-n <test_number>] [-v]" << std::endl;
+                std::cout << "Usage: ./fp32_adder_test [-f <filename>] [-n <test_number>] [-v]" << std::endl;
                 std::cout << "  -f <filename>     Use custom test vectors from file" << std::endl;
                 std::cout << "  -n <test_number>  Use specified number of random test vectors (default=10000)" << std::endl;
                 std::cout << "  -v                Verbose output (show all test results)" << std::endl;
@@ -211,19 +211,19 @@ int main(int argc, char* argv[]) {
     read_command_line_arguments(argc, argv, test_number, filename, verbose);
 
     // Call tester class to run the test
-    FpMultiplierTester tester;
-    FpMultiplier* fp_multiplier_under_test = new FpMultiplierVerilog();
-    FpMultiplier* fp_multiplier_golden = new FpMultiplierGolden();
+    FpAdderTester tester;
+    FpAdder* fp_adder_under_test = new FpAdderVerilog();
+    FpAdder* fp_adder_golden = new FpAdderGolden();
     int result = 0;
     if (filename.empty()) {
-        result = tester.run(*fp_multiplier_under_test, *fp_multiplier_golden, test_number, verbose);
+        result = tester.run(*fp_adder_under_test, *fp_adder_golden, test_number, verbose);
     } else {
-        result = tester.run(*fp_multiplier_under_test, *fp_multiplier_golden, filename, verbose);
+        result = tester.run(*fp_adder_under_test, *fp_adder_golden, filename, verbose);
     }
 
     // Clean up
-    delete fp_multiplier_under_test;
-    delete fp_multiplier_golden;
+    delete fp_adder_under_test;
+    delete fp_adder_golden;
     
     std::cout << "INFO: Tests completed. VCD file should be generated." << std::endl;
     return result;

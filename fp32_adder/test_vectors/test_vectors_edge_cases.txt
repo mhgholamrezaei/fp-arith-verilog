@@ -1,0 +1,13 @@
+# Edge cases for fp32_adder
+0.0 0.0
+inf 1.0
+-inf 1.0
+inf inf
+-inf -inf
+inf -inf
+nan 1.0
+1.0 nan
+nan nan
+1.17549e-38 1.17549e-38
+3.402823e+38 1.0
+-3.402823e+38 -1.0

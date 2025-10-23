@@ -1,0 +1,3 @@
+Vfp32_multiplier___024root__DepSet_hf282a3d0__0.o: \
+ Vfp32_multiplier___024root__DepSet_hf282a3d0__0.cpp \
+ Vfp32_multiplier__pch.h Vfp32_multiplier___024root.h
