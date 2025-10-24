@@ -3,6 +3,21 @@ module fp32_adder(
     input [31:0] b,
     output [31:0] result
 );
+    // Step 0: Special cases
+    
+    // Infinity flag sets 1 if either one of the exponent is 255
+    wire a_is_infinity = (&a[30:23]);
+    wire b_is_infinity = (&b[30:23]);
+    wire infinity = a_is_infinity | b_is_infinity;
+
+    wire a_is_zero = ~|a[30:23] & ~|a[22:0];
+    wire b_is_zero = ~|b[30:23] & ~|b[22:0];
+    wire zero = a_is_zero & b_is_zero;
+
+    // nan detection: NaN occurs when either operand is NaN (exp=255 with non-zero mantissa)
+    wire a_is_nan = (&a[30:23]) & (|a[22:0]);
+    wire b_is_nan = (&b[30:23]) & (|b[22:0]);
+    wire nan = a_is_nan | b_is_nan | (a_is_infinity & b_is_infinity & (sign_a ^ sign_b));
 
     // Step 1: Extract sign, exponent, and mantissa from inputs
     wire sign_a = a[31];
@@ -87,7 +102,11 @@ module fp32_adder(
 
     // Dummy implementation to avoid unused signal warnings
     // Use all signals to avoid warnings
-    assign result = {sign_result, exp_result, M_result[22:0]};
+    assign result = 
+                    nan        ? {1'b0, 8'hFF, 23'h400000} :                    // NaN
+                    infinity   ? {(a_is_infinity ? sign_a : sign_b), 8'hFF, 23'h000000} :                  // Infinity
+                    zero       ? {sign_result, 8'h00, 23'h000000} :                  // Zero
+                    {sign_result, exp_result, M_result[22:0]};              // Normal result
   
 
 endmodule

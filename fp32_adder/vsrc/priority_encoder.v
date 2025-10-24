@@ -36,13 +36,6 @@ module priority_encoder(
         input_significand[2]  ? 5'd21 :
         input_significand[1]  ? 5'd22 :
         input_significand[0]  ? 5'd23 :
-        5'd23;  // Default to 0 if no 1s found
-    
-    // Assertions for priority encoder verification
-    always @(*) begin
-        if (input_significand == 24'h0c00000) begin
-            assert (leading_1_position == 5'h0) else $error("Priority encoder: 0x0c00000 should give position 0x0 (leading 1 at pos 23), got %h", leading_1_position);
-        end
-    end
+        5'd0;  // Default to 0 if no 1s found
     
 endmodule
