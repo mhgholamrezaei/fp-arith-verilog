@@ -61,8 +61,6 @@ module fp32_adder
         .Sum(exp_diff_abs)
     );
 
-
-
     // Step 3: Shift the smaller mantissa by the difference in exponents
     wire [23:0] smaller_mantissa_shifted;
     right_shifter right_shifter_inst (
@@ -71,7 +69,6 @@ module fp32_adder
         .upper_exp_bits(exp_diff_abs[7:5]),
         .out(smaller_mantissa_shifted)
     );
-
 
     // Step 4: Determine the effective operation
     wire operation_add = a_sign == b_sign;
@@ -88,13 +85,12 @@ module fp32_adder
 
     // Step 6: Normalize the result
     // find the position of the leading 1 in the M_sub_add_result[23:0] and shift the result left by the position
-    wire [4:0] leading_1_position;
-    // instantiate the priority encoder
-    priority_encoder priority_encoder_inst (
-        .input_significand(mantissa_sub_add_result[23:0]),
-        .leading_1_position(leading_1_position)
+    wire [4:0] leading_1_position_tmp, leading_1_position;
+    leading_one_detector leading_one_detector_inst (
+        .x({8'b0, mantissa_sub_add_result[23:0]}),
+        .n(leading_1_position_tmp)
     );
-
+    assign leading_1_position = (leading_1_position_tmp == 5'd31) ? 5'd0 : (leading_1_position_tmp - 5'd8);
 
     wire [22:0] mantissa_sub_normalized_shifted;
     left_shifter left_shifter_inst (
@@ -102,11 +98,11 @@ module fp32_adder
         .shift_amt(leading_1_position),
         .out(mantissa_sub_normalized_shifted)
     );
+ 
 
     wire do_right_shift = mantissa_sub_add_result[24] ? 1'b1 : 1'b0;    
     wire [22:0] mantissa_add_normalized = do_right_shift ? mantissa_sub_add_result[23:1] : mantissa_sub_add_result[22:0];
     wire [22:0] result_mantissa = operation_add ? mantissa_add_normalized : mantissa_sub_normalized_shifted[22:0];
-
 
     // Step 7: Calculate the exponent
     // Exponent arithmetic using adder_nbit and a mux for selecting add/sub

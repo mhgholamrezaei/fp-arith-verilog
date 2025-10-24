@@ -18,7 +18,7 @@ SHARED_VSRC = ../shared/vsrc
 SHARED_SRC = ../shared/src
 
 # Source files
-VERILOG_SOURCES = $(VSRC_DIR)/fp32_adder.v  $(VSRC_DIR)/priority_encoder.v $(VSRC_DIR)/right_shifter.v $(VSRC_DIR)/left_shifter.v $(SHARED_VSRC)/adder_nbit.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
+VERILOG_SOURCES = $(VSRC_DIR)/fp32_adder.v  $(VSRC_DIR)/leading_one_detector.v $(VSRC_DIR)/right_shifter.v $(VSRC_DIR)/left_shifter.v $(SHARED_VSRC)/adder_nbit.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
 CPP_SOURCES = $(SRC_DIR)/fp_adder_test.cpp
 
 # Output directories (relative to module directory)
