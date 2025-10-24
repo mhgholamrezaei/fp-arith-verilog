@@ -46,7 +46,18 @@ module fp32_adder(
     wire [23:0] smaller_mantissa = swap_exp ? a_mantissa_24 : b_mantissa_24;
     wire larger_sign = swap_exp ? b_sign : a_sign;
 
-    wire [7:0] exp_diff_abs = exp_diff[7] ? ~exp_diff + 1 : exp_diff;
+    wire [7:0] exp_diff_second_operand = (exp_diff[7]) ? ~exp_diff : exp_diff;
+    wire exp_diff_carry_in = (exp_diff[7]) ? 1'b1 : 1'b0;
+    // use adder_nbit to add the larger_exp and the exp_diff_second_operand
+    wire [7:0] exp_diff_abs;
+    adder_nbit #(.WIDTH(8)) u_exp_diff_abs_adder (
+        .A(8'b0),
+        .B(exp_diff_second_operand),
+        .Cin(exp_diff_carry_in),
+        .Sum(exp_diff_abs)
+    );
+
+
 
     // Step 3: Shift the smaller mantissa by the difference in exponents
     wire [23:0] smaller_mantissa_shifted;
@@ -94,8 +105,16 @@ module fp32_adder(
 
 
     // Step 7: Calculate the exponent
-    // TODO: impleent using adder_nbit
-    wire [7:0] result_exp = (operation_add) ? (larger_exp + {7'b0, do_right_shift}) : (larger_exp - {3'b0, leading_1_position});
+    // Exponent arithmetic using adder_nbit and a mux for selecting add/sub
+    wire [7:0] second_operand = operation_add ? {7'b0, do_right_shift} : ~{3'b0, leading_1_position};
+    wire carry_in = operation_add ? 1'b0 : 1'b1;
+    wire [7:0] result_exp;
+    adder_nbit #(.WIDTH(8)) u_exp_add (
+        .A(larger_exp),
+        .B(second_operand),
+        .Cin(carry_in),
+        .Sum(result_exp)
+    );
 
     // Step 8: Compute the sign
     wire result_sign = operation_add ? a_sign : (larger_sign ^ mantissa_sub_add_result[24]);

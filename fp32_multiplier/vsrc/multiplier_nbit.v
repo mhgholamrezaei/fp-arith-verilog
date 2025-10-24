@@ -37,6 +37,7 @@ module multiplier_nbit #(
             adder_nbit #(.WIDTH(2*WIDTH), .IMPL_TYPE(IMPL_TYPE)) u_adder (
                 .A(acc[i-1]),
                 .B(partial_product),
+                .Cin(1'b0),
                 .Sum(acc[i])
             );
         end

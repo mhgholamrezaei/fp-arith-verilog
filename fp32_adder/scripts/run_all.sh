@@ -42,9 +42,5 @@ else
     exit 1
 fi
 
-# Run the test
-# echo "INFO: Running FP32 adder tests..."
-# ../apptainer/apptainer_run.sh ./fp32_adder_test -n 100
-
 echo ""
 echo "INFO: FP32 adder test suite completed successfully!"

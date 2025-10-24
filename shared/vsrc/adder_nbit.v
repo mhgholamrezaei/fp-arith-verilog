@@ -10,7 +10,7 @@ module adder_nbit #(
 )(
     input [WIDTH-1:0] A,
     input [WIDTH-1:0] B,
-    input Cin = 1'b0,
+    input Cin,
     output [WIDTH-1:0] Sum
 );
 

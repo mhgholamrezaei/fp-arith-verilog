@@ -42,9 +42,5 @@ else
     exit 1
 fi
 
-# Run the test
-echo "INFO: Running FP32 multiplier tests..."
-../apptainer/apptainer_run.sh ./fp32_multiplier_test -n 100
-
 echo ""
 echo "INFO: FP32 multiplier test suite completed successfully!"

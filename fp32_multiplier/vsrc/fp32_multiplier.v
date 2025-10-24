@@ -70,7 +70,13 @@ module fp32_multiplier (
     assign product_normalised = normalised ? product : product << 1;
 
     // Final Mantissa
-    assign product_mantissa = product_normalised[46:24] + (product_normalised[23] & product_round);
+    // Use adder_nbit for mantissa addition (product_normalised[46:24] + rounding)
+    adder_nbit #(.WIDTH(24)) u_mantissa_adder (
+        .A({{1'b0}, {product_normalised[46:24]}}),
+        .B({{23'b0}, {(product_normalised[23] & product_round)}}),
+        .Cin(1'b0),
+        .Sum(product_mantissa)
+    );
     wire renormalized = product_mantissa[23] ? 1'b1 : 1'b0;
 
     // Zero detection
@@ -81,11 +87,33 @@ module fp32_multiplier (
     adder_nbit #(.WIDTH(9)) u_exponent_adder (
         .A({1'b0, a[30:23]}),
         .B({1'b0, b[30:23]}),
+        .Cin(1'b0),
         .Sum(sum_exponent)
     );
     
     // Final exponent calculation
-    assign exponent = sum_exponent - 8'd127 + normalised + renormalized;
+    // assign exponent = sum_exponent - 8'd127 + normalised + renormalized; (TODO: delete this)
+    // -127 = +8'h81 in two's complement
+    wire [8:0] bias   = 9'h81;
+    wire [1:0] k      = { (normalised & renormalized), (normalised ^ renormalized) }; // 0..2
+    wire [8:0] k_ext  = {7'b0, k};
+
+    // Implement exponent = sum_exponent + bias + k_ext using two adder_nbit instances
+    wire [8:0] exponent_tmp1;  // sum_exponent + bias
+    adder_nbit #(.WIDTH(9)) u_exp_bias_adder (
+        .A(sum_exponent),
+        .B(bias),       // bias is 8 bits, pad to 9
+        .Cin(1'b0),
+        .Sum(exponent_tmp1)
+    );
+    adder_nbit #(.WIDTH(9)) u_exp_kext_adder (
+        .A(exponent_tmp1),
+        .B(k_ext),      // k_ext is 8 bits, pad to 9
+        .Cin(1'b0),
+        .Sum(exponent)
+    );
+
+
     
     // Overflow detection: If overall exponent is greater (or equal) to 255 then Overflow condition
     wire exp_gt_255 = exponent[8];                   // >255 ⇒ bit8=1
