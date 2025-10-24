@@ -28,8 +28,8 @@ module fp32_adder(
     wire [22:0] mant_b = b[22:0];
     
     // Add hidden bit for normalized numbers
-    wire [23:0] M_a = (exp_a != 0) ? {1'b1, mant_a} : {1'b0, mant_a};
-    wire [23:0] M_b = (exp_b != 0) ? {1'b1, mant_b} : {1'b0, mant_b};
+    wire [23:0] M_a = (a_is_zero) ? {1'b0, mant_a} : {1'b1, mant_a};
+    wire [23:0] M_b = (b_is_zero) ? {1'b0, mant_b} : {1'b1, mant_b};
     
     
     // Step 2: Compute the difference in exponents  
@@ -100,13 +100,16 @@ module fp32_adder(
     // Step 8: Compute the sign
     wire sign_result = operation_add ? sign_a : (sign_larger ^ M_sub_add_result[24]);
 
-    // Dummy implementation to avoid unused signal warnings
-    // Use all signals to avoid warnings
+    // Step 9: Handle overflow and underflow
+    wire overflow = (exp_result == 8'd255);
+    wire underflow = (exp_result == 8'd0 | (M_sub_add_result[24] & ~operation_add));
+
     assign result = 
                     nan        ? {1'b0, 8'hFF, 23'h400000} :                    // NaN
                     infinity   ? {(a_is_infinity ? sign_a : sign_b), 8'hFF, 23'h000000} :                  // Infinity
                     zero       ? {sign_result, 8'h00, 23'h000000} :                  // Zero
-                    {sign_result, exp_result, M_result[22:0]};              // Normal result
+                    overflow   ? {sign_result, 8'hFF, 23'h000000} :                  // Infinity
+                    underflow  ? {sign_result, 8'h00, 23'h000000} :                  // gradual underflow
+                    {sign_result, exp_result, M_result[22:0]};                  // Normal result
   
-
 endmodule
