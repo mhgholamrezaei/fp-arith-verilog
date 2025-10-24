@@ -1,4 +1,8 @@
-module fp32_adder(
+module fp32_adder
+#(
+    parameter IMPL_TYPE = 0
+)
+(
     input [31:0] a,
     input [31:0] b,
     output [31:0] result
@@ -34,7 +38,7 @@ module fp32_adder(
     
     // Step 2: Compute the difference in exponents  
     wire [7:0] exp_diff; 
-    adder_nbit #(.WIDTH(8)) u_exp_diff_adder (
+    adder_nbit #(.WIDTH(8), .IMPL_TYPE(IMPL_TYPE)) u_exp_diff_adder (
         .A(a_exp),
         .B(~b_exp),
         .Cin(1'b1),
@@ -50,7 +54,7 @@ module fp32_adder(
     wire exp_diff_carry_in = (exp_diff[7]) ? 1'b1 : 1'b0;
     // use adder_nbit to add the larger_exp and the exp_diff_second_operand
     wire [7:0] exp_diff_abs;
-    adder_nbit #(.WIDTH(8)) u_exp_diff_abs_adder (
+    adder_nbit #(.WIDTH(8), .IMPL_TYPE(IMPL_TYPE)) u_exp_diff_abs_adder (
         .A(8'b0),
         .B(exp_diff_second_operand),
         .Cin(exp_diff_carry_in),
@@ -75,7 +79,7 @@ module fp32_adder(
     // Step 5: Perform the addition/subtraction
     wire [24:0] smaller_mantissa_shifted_and_extended = operation_add ? ({1'b0, smaller_mantissa_shifted}) : ({smaller_mantissa_shifted[23], smaller_mantissa_shifted});
     wire [24:0] mantissa_sub_add_result;
-    adder_nbit #(.WIDTH(25)) u_M_result_adder (
+    adder_nbit #(.WIDTH(25), .IMPL_TYPE(IMPL_TYPE)) u_M_result_adder (
         .A({1'b0, larger_mantissa}),
         .B((~operation_add) ? (~smaller_mantissa_shifted_and_extended) : smaller_mantissa_shifted_and_extended),
         .Cin(~operation_add),
@@ -109,7 +113,7 @@ module fp32_adder(
     wire [7:0] second_operand = operation_add ? {7'b0, do_right_shift} : ~{3'b0, leading_1_position};
     wire carry_in = operation_add ? 1'b0 : 1'b1;
     wire [7:0] result_exp;
-    adder_nbit #(.WIDTH(8)) u_exp_add (
+    adder_nbit #(.WIDTH(8), .IMPL_TYPE(IMPL_TYPE)) u_exp_add (
         .A(larger_exp),
         .B(second_operand),
         .Cin(carry_in),
