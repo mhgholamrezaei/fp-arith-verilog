@@ -38,7 +38,6 @@
    ```
 
 # TODO 
-- Implement emulation for fp32 addition
 - Add to PIMsynth
 - Support fp8 and fp16
 

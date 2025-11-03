@@ -1,12 +1,12 @@
 // n-bit Integer Multiplier Submodule
-// Dependencies: adder_1bit.v adder_nbit.v
+// Dependencies: adder_1bit.v adder_nbit_cin.v
 // hosein, 10/06/2025
 
 /* verilator lint_off UNUSEDPARAM */
 /* verilator lint_off EOFNEWLINE */
 /* verilator lint_off GENUNNAMED */
 
-module multiplier_nbit #(
+module multiplier_nbit_full #(
     parameter WIDTH = 32,
     parameter IMPL_TYPE = 0
 )(
@@ -34,7 +34,7 @@ module multiplier_nbit #(
             assign partial_product = B[i] ? ({{WIDTH{1'b0}}, A} << i) : {2*WIDTH{1'b0}};
             
             // Add partial product to previous accumulator using custom adder
-            adder_nbit #(.WIDTH(2*WIDTH), .IMPL_TYPE(IMPL_TYPE)) u_adder (
+            adder_nbit_cin #(.WIDTH(2*WIDTH), .IMPL_TYPE(IMPL_TYPE)) u_adder (
                 .A(acc[i-1]),
                 .B(partial_product),
                 .Cin(1'b0),

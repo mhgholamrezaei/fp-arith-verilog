@@ -5,7 +5,7 @@
 #ifdef VERILATOR
 #include "verilated.h"
 #include "verilated_vcd_c.h"
-#include "Vfp32_adder.h"
+#include "Vadder_fp32.h"
 #endif
 
 // Abstract base class for floating-point adders
@@ -150,18 +150,18 @@ public:
 #ifdef VERILATOR
 class FpAdderVerilog : public FpAdder {
 private:
-    Vfp32_adder* dut;
+    Vadder_fp32* dut;
     VerilatedVcdC* vcd;
     uint64_t sim_time;
     
 public:
-    FpAdderVerilog() : dut(new Vfp32_adder()), vcd(nullptr), sim_time(0) {
+    FpAdderVerilog() : dut(new Vadder_fp32()), vcd(nullptr), sim_time(0) {
         // Initialize VCD tracing
         Verilated::traceEverOn(true);
         vcd = new VerilatedVcdC();
         dut->trace(vcd, 99);
-        std::cout << "INFO: Opening VCD file: vcd/fp32_adder_test.vcd" << std::endl;
-        vcd->open("vcd/fp32_adder_test.vcd");
+        std::cout << "INFO: Opening VCD file: vcd/adder_fp32_test.vcd" << std::endl;
+        vcd->open("vcd/adder_fp32_test.vcd");
         std::cout << "INFO: VCD file opened successfully" << std::endl;
     }
     

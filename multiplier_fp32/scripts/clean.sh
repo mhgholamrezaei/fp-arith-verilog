@@ -20,9 +20,9 @@ if [ -d "../vcd" ]; then
 fi
 
 # Remove any standalone executables
-if [ -f "./fp32_multiplier_test" ]; then
-    echo "Removing fp32_multiplier_test executable..."
-    rm -f ./fp32_multiplier_test
+if [ -f "./multiplier_fp32_test" ]; then
+    echo "Removing multiplier_fp32_test executable..."
+    rm -f ./multiplier_fp32_test
 fi
 
 # Remove test output logs

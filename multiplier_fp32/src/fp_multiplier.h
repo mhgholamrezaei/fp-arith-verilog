@@ -5,7 +5,7 @@
 #ifdef VERILATOR
 #include "verilated.h"
 #include "verilated_vcd_c.h"
-#include "Vfp32_multiplier.h"
+#include "Vmultiplier_fp32.h"
 #endif
 
 // Abstract base class for floating-point multipliers
@@ -128,19 +128,19 @@ public:
 // Verilog Testbench implementation
 class FpMultiplierVerilog : public FpMultiplier {
 private:
-    Vfp32_multiplier* dut;
+    Vmultiplier_fp32* dut;
     vluint64_t sim_time;
     VerilatedVcdC* trace;
     
 public:
     FpMultiplierVerilog() : sim_time(0), trace(nullptr) {
-        dut = new Vfp32_multiplier;
+        dut = new Vmultiplier_fp32;
         // Initialize tracing
         Verilated::traceEverOn(true);
         trace = new VerilatedVcdC;
         dut->trace(trace, 99);
-        std::cout << "INFO: Opening VCD file: vcd/fp32_multiplier_test.vcd" << std::endl;
-        trace->open("vcd/fp32_multiplier_test.vcd");
+        std::cout << "INFO: Opening VCD file: vcd/multiplier_fp32_test.vcd" << std::endl;
+        trace->open("vcd/multiplier_fp32_test.vcd");
         std::cout << "INFO: VCD file opened successfully" << std::endl;
     }
     

@@ -4,7 +4,7 @@
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-module adder_nbit #(
+module adder_nbit_cin #(
     parameter WIDTH = 32,
     parameter IMPL_TYPE = 0
 )(

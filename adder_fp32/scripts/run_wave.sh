@@ -1,10 +1,10 @@
 #!/bin/bash
-# fp32_multiplier/scripts/run_wave.sh - Launch GTKWave for FP32 multiplier VCD files
+# fp32_adder/scripts/run_wave.sh - Launch GTKWave for FP32 adder VCD files
 
-echo "Launching GTKWave for FP32 Multiplier"
-echo "====================================="
+echo "Launching GTKWave for FP32 Adder"
+echo "================================="
 
-# Change to the multiplier module directory
+# Change to the adder module directory
 cd "$(dirname "$0")/.."
 
 # Check if GTKWave is available
@@ -14,10 +14,10 @@ if ! command -v gtkwave &> /dev/null; then
 fi
 
 # Check if VCD file exists
-VCD_FILE="vcd/fp32_multiplier_test.vcd"
+VCD_FILE="vcd/adder_fp32_test.vcd"
 if [ ! -f "$VCD_FILE" ]; then
     echo "Error: VCD file not found at $VCD_FILE"
-    echo "Please run the multiplier tests first to generate the VCD file."
+    echo "Please run the adder tests first to generate the VCD file."
     exit 1
 fi
 

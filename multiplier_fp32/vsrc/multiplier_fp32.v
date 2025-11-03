@@ -1,8 +1,8 @@
 // IEEE-754 Single Precision Floating Point Multiplier - Combinational Logic
 // Based on the implementation by Sheetal Swaroop Burada
 // Pure combinational floating-point multiplication
-// Dependencies: multiplier_nbit.v
-//             : adder_nbit.v
+// Dependencies: multiplier_nbit_full.v
+//             : adder_nbit_cin.v
 //             : adder_1bit.v
 //             : maj3.v
 // hosein, 10/18/2025
@@ -10,7 +10,7 @@
 /* verilator lint_off UNUSEDSIGNAL */
 /* verilator lint_off WIDTHEXPAND */
 
-module fp32_multiplier 
+module multiplier_fp32 
 #(
     parameter IMPL_TYPE = 0
 )
@@ -45,7 +45,7 @@ module fp32_multiplier
     
     // Calculate product (24x24 -> 48-bit) using custom multiplier
     wire [47:0] product;
-    multiplier_nbit #(.WIDTH(24), .IMPL_TYPE(IMPL_TYPE)) u_multiplier (
+    multiplier_nbit_full #(.WIDTH(24), .IMPL_TYPE(IMPL_TYPE)) u_multiplier (
         .A(a_significand),
         .B(b_significand),
         .P(product)
@@ -59,9 +59,9 @@ module fp32_multiplier
     wire [47:0] product_normalised = is_normalised ? product : product << 1;
 
     // Final Mantissa
-    // Use adder_nbit for mantissa addition (product_normalised[46:24] + rounding)
+    // Use adder_nbit_cin for mantissa addition (product_normalised[46:24] + rounding)
     wire [23:0] product_mantissa;
-    adder_nbit #(.WIDTH(24)) u_mantissa_adder (
+    adder_nbit_cin #(.WIDTH(24)) u_mantissa_adder (
         .A({{1'b0}, {product_normalised[46:24]}}),
         .B({{23'b0}, {(product_normalised[23] & product_round)}}),
         .Cin(1'b0),
@@ -75,7 +75,7 @@ module fp32_multiplier
     // Sum of exponents
     // Use adder_nbit for summing exponents
     wire [8:0] sum_exponent;
-    adder_nbit #(.WIDTH(9)) u_exponent_adder (
+    adder_nbit_cin #(.WIDTH(9)) u_exponent_adder (
         .A({1'b0, a[30:23]}),
         .B({1'b0, b[30:23]}),
         .Cin(1'b0),
@@ -89,16 +89,16 @@ module fp32_multiplier
     wire [1:0] k      = { (is_normalised & is_renormalized), (is_normalised ^ is_renormalized) }; // 0..2
     wire [8:0] k_ext  = {7'b0, k};
 
-    // Implement exponent = sum_exponent + bias + k_ext using two adder_nbit instances
+    // Implement exponent = sum_exponent + bias + k_ext using two adder_nbit_cin instances
     wire [8:0] exponent_tmp1;  // sum_exponent + bias
     wire [8:0] exponent;
-    adder_nbit #(.WIDTH(9)) u_exp_bias_adder (
+    adder_nbit_cin #(.WIDTH(9)) u_exp_bias_adder (
         .A(sum_exponent),
         .B(bias),       // bias is 8 bits, pad to 9
         .Cin(1'b0),
         .Sum(exponent_tmp1)
     );
-    adder_nbit #(.WIDTH(9)) u_exp_kext_adder (
+    adder_nbit_cin #(.WIDTH(9)) u_exp_kext_adder (
         .A(exponent_tmp1),
         .B(k_ext),      // k_ext is 8 bits, pad to 9
         .Cin(1'b0),
