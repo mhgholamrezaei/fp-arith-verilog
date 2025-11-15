@@ -9,11 +9,13 @@
 class FpType {
 public:
     bool sign{false};
-    uint32_t mantissa{0};
-    uint32_t exponent{0};
+    uint64_t mantissa{0};
+    uint64_t exponent{0};
+    uint32_t m_bits{23};
+    uint32_t e_bits{8};
     
     FpType() = default;
-    FpType(bool s, uint32_t exp, uint32_t mant) : sign(s), mantissa(mant), exponent(exp) {}
+    FpType(bool s, uint64_t exp, uint64_t mant, uint32_t mb = 23, uint32_t eb = 8) : sign(s), mantissa(mant), exponent(exp), m_bits(mb), e_bits(eb) {}
 };
 
 // Utility functions for floating-point operations
@@ -37,17 +39,17 @@ public:
     static FpType fromFloat(float f) {
         uint32_t bits = floatToBits(f);
         FpType result;
-        result.sign = (bits >> 31) & 1;
-        result.exponent = (bits >> 23) & 0xFF;
-        result.mantissa = bits & 0x7FFFFF;
+        result.sign = (bits >> (result.m_bits + result.e_bits)) & 1;
+        result.exponent = (uint64_t) (bits >> result.m_bits) & ((1 << result.e_bits) - 1);
+        result.mantissa = (uint64_t) bits & ((1 << result.m_bits) - 1);
         return result;
     }
 
     // Convert FpType to float
     static float toFloat(const FpType &e) {
-        uint32_t bits = (e.sign ? 1u : 0u) << 31;
-        bits |= (e.exponent & 0xFFu) << 23;
-        bits |= e.mantissa & 0x7FFFFFu;
+        uint32_t bits = (e.sign ? 1u : 0u) << (e.m_bits + e.e_bits);
+        bits |= (e.exponent & ((1 << e.e_bits) - 1)) << e.m_bits;
+        bits |= e.mantissa & ((1 << e.m_bits) - 1);
         return bitsToFloat(bits);
     }
 
@@ -60,9 +62,9 @@ public:
         // Determine special cases
         if (e.exponent == 0 && e.mantissa == 0) {
             std::cout << " [zero]";
-        } else if (e.exponent == 0xFF && e.mantissa == 0) {
+        } else if (e.exponent == ((1 << e.e_bits) - 1) && e.mantissa == 0) {
             std::cout << " [inf]";
-        } else if (e.exponent == 0xFF && e.mantissa != 0) {
+        } else if (e.exponent == ((1 << e.e_bits) - 1) && e.mantissa != 0) {
             std::cout << " [nan]";
         }
         
@@ -82,6 +84,6 @@ public:
             return std::signbit(fa) == std::signbit(fb);
 
         // Use relative comparison (also catches zeros)
-        return std::fabs(fa - fb) <= eps * std::fmax(1.0f, std::fmax(std::fabs(fa), std::fabs(fb)));
+        return std::fabs(fa - fb) <= eps;
     }
 };
