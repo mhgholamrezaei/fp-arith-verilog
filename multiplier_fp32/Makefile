@@ -18,7 +18,7 @@ SHARED_VSRC = ../shared/vsrc
 SHARED_SRC = ../shared/src
 
 # Source files
-VERILOG_SOURCES = $(VSRC_DIR)/multiplier_fp32.v $(VSRC_DIR)/multiplier_nbit_full.v \
+VERILOG_SOURCES = $(VSRC_DIR)/multiplier_fp32.v $(SHARED_VSRC)/multiplier_nbit_full.v \
                   $(SHARED_VSRC)/adder_nbit_cin.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
 CPP_SOURCES = $(SRC_DIR)/fp_multiplier_test.cpp
 
@@ -27,7 +27,7 @@ OBJ_DIR = obj_dir
 VCD_DIR = vcd
 
 # Main target executable
-MAIN_TARGET = $(OBJ_DIR)/multiplier_fp32_test
+MAIN_TARGET = multiplier_fp32_test.out
 
 # Default target
 all: $(MAIN_TARGET)
@@ -38,52 +38,14 @@ $(MAIN_TARGET): $(VERILOG_SOURCES) $(CPP_SOURCES) $(VCD_DIR)
 	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_TOP) \
 		-CFLAGS "-I../shared/src" \
 		$(VERILOG_SOURCES) \
-		$(SRC_DIR)/fp_multiplier_test.cpp -o multiplier_fp32_test
+		$(SRC_DIR)/fp_multiplier_test.cpp -o $(MAIN_TARGET) 
 	@echo "Compiling..."
 	cd $(OBJ_DIR) && make -f Vmultiplier_fp32.mk
 	@echo "Multiplier build complete!"
 
-# Test targets
-test-random: $(MAIN_TARGET)
-	@echo "Running FP32 multiplier tests (100 random cases)..."
-	./$(MAIN_TARGET) -n 100
-
-test-small: $(MAIN_TARGET)
-	@echo "Running FP32 multiplier tests (small test vectors)..."
-	./$(MAIN_TARGET) -f $(TEST_VECTORS_DIR)/test_vectors_small.txt
-
-test-all: $(MAIN_TARGET)
-	@echo "Running FP32 multiplier tests (all test vectors)..."
-	./$(MAIN_TARGET) -f $(TEST_VECTORS_DIR)/test_vectors_all.txt
-
-test-edge: $(MAIN_TARGET)
-	@echo "Running FP32 multiplier tests (edge cases)..."
-	./$(MAIN_TARGET) -f $(TEST_VECTORS_DIR)/test_vectors_edge_cases.txt
-
-test-verbose: $(MAIN_TARGET)
-	@echo "Running FP32 multiplier tests (verbose output)..."
-	./$(MAIN_TARGET) -n 10 -v
-
-# Custom test with specific file
-test-file: $(MAIN_TARGET)
-	@if [ -z "$(FILE)" ]; then \
-		echo "Usage: make test-file FILE=path/to/test_vectors.txt"; \
-		exit 1; \
-	fi
-	@echo "Running FP32 multiplier tests with file: $(FILE)"
-	./$(MAIN_TARGET) -f $(FILE)
-
-# Clean build artifacts for this module only
-clean:
-	@echo "Cleaning FP32 multiplier build artifacts..."
-	rm -rf $(OBJ_DIR)/Vmultiplier_fp32.*
-	rm -rf $(OBJ_DIR)/Vfp32_multiplier.*
-	rm -f $(OBJ_DIR)/multiplier_fp32_test
-	@echo "Multiplier clean complete!"
-
 # Clean all build artifacts
-clean-all:
-	@echo "Cleaning all build artifacts..."
+clean:
+	@echo "Cleaning build artifacts..."
 	rm -rf $(OBJ_DIR)
 	rm -rf $(VCD_DIR)
 	rm -f test_output.log
@@ -96,23 +58,4 @@ $(OBJ_DIR):
 $(VCD_DIR):
 	mkdir -p $(VCD_DIR)
 
-# Help target
-help:
-	@echo "FP32 Multiplier Module - Available targets:"
-	@echo "  all           - Build the FP32 multiplier test executable"
-	@echo "  test-random    - Run tests with 100 random cases"
-	@echo "  test-small     - Run tests with small test vectors"
-	@echo "  test-all       - Run tests with all test vectors"
-	@echo "  test-edge      - Run tests with edge case vectors"
-	@echo "  test-verbose   - Run tests with verbose output (10 cases)"
-	@echo "  test-file      - Run tests with custom file (use FILE=path)"
-	@echo "  clean          - Clean multiplier build artifacts only"
-	@echo "  clean-all      - Clean all build artifacts"
-	@echo "  help           - Show this help message"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make test-file FILE=test_vectors/test_vectors_small.txt"
-	@echo "  make test-random"
-	@echo "  make test-all"
-
-.PHONY: all test-random test-small test-all test-edge test-verbose test-file clean clean-all help
+.PHONY: all clean

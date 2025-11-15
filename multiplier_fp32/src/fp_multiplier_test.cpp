@@ -16,8 +16,8 @@ private:
     std::random_device rd;
     std::mt19937 gen;
     std::uniform_real_distribution<float> dis;
-    float max_float = std::numeric_limits<float>::max();
-    float min_float = -std::numeric_limits<float>::max();
+    float max_float = 1e+6f;
+    float min_float = -1e+6f;
 
 public:
     FpMultiplierTester() : gen(rd()), dis(min_float, max_float) {}

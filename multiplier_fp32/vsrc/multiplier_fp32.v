@@ -84,8 +84,8 @@ module multiplier_fp32
     
     // Final exponent calculation
     // assign exponent = sum_exponent - 8'd127 + normalised + renormalized; (TODO: delete this)
-    // -127 = +8'h81 in two's complement
-    wire [8:0] bias   = 9'h81;
+    // -127 = +9'h181 in two's complement (for 9-bit arithmetic)
+    wire [8:0] bias   = 9'h181;
     wire [1:0] k      = { (is_normalised & is_renormalized), (is_normalised ^ is_renormalized) }; // 0..2
     wire [8:0] k_ext  = {7'b0, k};
 
@@ -106,12 +106,17 @@ module multiplier_fp32
     );
     
     // Overflow detection: If overall exponent is greater (or equal) to 255 then Overflow condition
-    wire exp_gt_255 = exponent[8];                   // >255 ⇒ bit8=1
-    wire exp_eq_255 = ~exponent[8] & (&exponent[7:0]); // 255 ⇒ bit8=0, rest=all 1
+    // Note: We need to exclude negative values (0x180-0x1FF) which have bit8=1 but bit7=1
+    // Overflow occurs when: (bit8=1 AND bit7=0, meaning >=256) OR (exponent = 255 exactly)
+    // Values 0x100-0x17F (256-383) are overflow, values 0x180-0x1FF (384-511, signed: -128 to -1) are underflow
+    wire exp_gt_255 = exponent[8] & ~exponent[7];   // >255: bit8=1 AND bit7=0 (values 256-383)
+    wire exp_eq_255 = ~exponent[8] & (&exponent[7:0]); // 255: bit8=0, all lower bits=1
     wire is_overflow = !is_zero & (exp_gt_255 | exp_eq_255);
     
-    // Underflow detection: If sum of both exponents is less than 127 then Underflow condition
-    wire is_underflow = ((exponent[8] & exponent[7]) & !is_zero) ? 1'b1 : 1'b0;
+    // Underflow detection: If exponent is negative (in two's complement) then Underflow condition
+    // Negative values in 9-bit two's complement: 0x180-0x1FF (384-511, represents -128 to -1)
+    // These have bit8=1 AND bit7=1
+    wire is_underflow = (exponent[8] & exponent[7] & !is_zero) ? 1'b1 : 1'b0;
     
     // Final result - IEEE-754 priority order
     assign result = 

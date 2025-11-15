@@ -173,13 +173,13 @@ public:
     
     FpType run(const FpType &a, const FpType &b) override {
         // Convert FpType to IEEE-754 bit representation
-        uint32_t a_bits = (a.sign ? 1u : 0u) << 31;
-        a_bits |= (a.exponent & 0xFFu) << 23;
-        a_bits |= a.mantissa & 0x7FFFFFu;
+        uint32_t a_bits = (a.sign ? 1u : 0u) << (a.m_bits + a.e_bits);
+        a_bits |= (a.exponent & ((1 << a.e_bits) - 1)) << a.m_bits;
+        a_bits |= a.mantissa & ((1 << a.m_bits) - 1);
         
-        uint32_t b_bits = (b.sign ? 1u : 0u) << 31;
-        b_bits |= (b.exponent & 0xFFu) << 23;
-        b_bits |= b.mantissa & 0x7FFFFFu;
+        uint32_t b_bits = (b.sign ? 1u : 0u) << (b.m_bits + b.e_bits);
+        b_bits |= (b.exponent & ((1 << b.e_bits) - 1)) << b.m_bits;
+        b_bits |= b.mantissa & ((1 << b.m_bits) - 1);
         
         // Apply inputs to Verilog module
         dut->a = a_bits;
@@ -191,9 +191,9 @@ public:
         uint32_t result_bits = dut->result;
         
         FpType result;
-        result.sign = (result_bits >> 31) & 1;
-        result.exponent = (result_bits >> 23) & 0xFF;
-        result.mantissa = result_bits & 0x7FFFFF;
+        result.sign = (result_bits >> (a.m_bits + a.e_bits)) & 1;
+        result.exponent = (result_bits >> a.m_bits) & ((1 << a.e_bits) - 1);
+        result.mantissa = result_bits & ((1 << a.m_bits) - 1);
         
         return result;
     }
