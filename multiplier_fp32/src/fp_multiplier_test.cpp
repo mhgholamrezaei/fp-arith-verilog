@@ -130,9 +130,9 @@ public:
     }
     
     // get two inputs and dut's output and golden model's output and print them
-    void print_test_vector(const std::pair<float, float>& test_pair, const FpType& dut_output, const FpType& golden_output) {
-        FpUtil::print("a            ", FpUtil::fromFloat(test_pair.first));
-        FpUtil::print("b            ", FpUtil::fromFloat(test_pair.second));
+    void print_test_vector(const FpType& a, const FpType& b, const FpType& dut_output, const FpType& golden_output) {
+        FpUtil::print("a            ", a);
+        FpUtil::print("b            ", b);
         FpUtil::print("dut_output   ", dut_output);
         FpUtil::print("golden_output", golden_output);
         std::cout << "--------------------------------" << std::endl;
@@ -145,18 +145,18 @@ public:
         int errors = 0;
         uint32_t i = 0;
         for (const auto& test_pair : test_vectors) {
-            FpType a = FpUtil::fromFloat(test_pair.first);
-            FpType b = FpUtil::fromFloat(test_pair.second);
+            FpType a = FpUtil::fromFloat(test_pair.first, 23, 8);
+            FpType b = FpUtil::fromFloat(test_pair.second, 23, 8);
             FpType z = fp_multiplier_under_test.run(a, b);
             FpType z_golden = fp_multiplier_golden.run(a, b);
             // compare results
             if (!FpUtil::is_equal(z, z_golden)) {
                 errors++;
                 std::cout << "Error: " << std::endl;
-                print_test_vector(test_pair, z, z_golden);
+                print_test_vector(a, b, z, z_golden);
             }
             else if (verbose) {
-                print_test_vector(test_pair, z, z_golden);
+                print_test_vector(a, b, z, z_golden);
             }
         }
    

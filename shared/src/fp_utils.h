@@ -9,13 +9,13 @@
 class FpType {
 public:
     bool sign{false};
-    uint64_t mantissa{0};
-    uint64_t exponent{0};
+    uint32_t mantissa{0};
+    uint32_t exponent{0};
     uint32_t m_bits{23};
     uint32_t e_bits{8};
     
     FpType() = default;
-    FpType(bool s, uint64_t exp, uint64_t mant, uint32_t mb = 23, uint32_t eb = 8) : sign(s), mantissa(mant), exponent(exp), m_bits(mb), e_bits(eb) {}
+    FpType(bool s, uint32_t exp, uint32_t mant, uint32_t mb = 23, uint32_t eb = 8) : sign(s), mantissa(mant), exponent(exp), m_bits(mb), e_bits(eb) {}
 };
 
 // Utility functions for floating-point operations
@@ -36,21 +36,61 @@ public:
     }
 
     // Convert float to FpType
-    static FpType fromFloat(float f) {
+    static FpType fromFloat(float f, uint32_t mb = 23, uint32_t eb = 8) {
+        // Handle special cases
+        if (std::isnan(f)) {
+            return FpType(std::signbit(f), (1 << eb) - 1, 1 << (mb - 1), mb, eb);
+        }
+        if (std::isinf(f)) {
+            return FpType(std::signbit(f), (1 << eb) - 1, 0, mb, eb);
+        }
+        if (f == 0.0f || f == -0.0f) {
+            return FpType(std::signbit(f), 0, 0, mb, eb);
+        }
         uint32_t bits = floatToBits(f);
-        FpType result;
-        result.sign = (bits >> (result.m_bits + result.e_bits)) & 1;
-        result.exponent = (uint64_t) (bits >> result.m_bits) & ((1 << result.e_bits) - 1);
-        result.mantissa = (uint64_t) bits & ((1 << result.m_bits) - 1);
-        return result;
+        
+        bool sign = std::signbit(f);
+        int32_t exponent = (bits >> 23) & 0xFF;
+        int32_t mantissa = bits & ((1 << 23) - 1);
+
+        // Convert FP32 exponent to FP8/16/32 exponent
+        int32_t fp32_exponent_unbiased = exponent - 127;
+        int32_t fpX_bias = (1 << (eb - 1)) - 1;
+        int32_t fpX_exponent_biased = fp32_exponent_unbiased + fpX_bias;
+
+        // if too small, return zero
+        if (fp32_exponent_unbiased < -((int32_t)(1 << (eb - 1)) - 1)) {
+            return FpType(false, 0, 0, mb, eb);
+        }
+
+        // if too large, return infinity
+        if (fp32_exponent_unbiased > ((int32_t)(1 << (eb - 1)))) {
+            return FpType(sign, (1 << eb) - 1, 0, mb, eb);
+        }
+
+        uint32_t fpX_mantissa = mantissa >> (23 - mb);
+
+        return FpType(sign, fpX_exponent_biased, fpX_mantissa, mb, eb);
     }
 
     // Convert FpType to float
     static float toFloat(const FpType &e) {
-        uint32_t bits = (e.sign ? 1u : 0u) << (e.m_bits + e.e_bits);
-        bits |= (e.exponent & ((1 << e.e_bits) - 1)) << e.m_bits;
-        bits |= e.mantissa & ((1 << e.m_bits) - 1);
-        return bitsToFloat(bits);
+        // Handle special cases
+        if (e.exponent == 0 && e.mantissa == 0) {
+            return 0.0f;
+        }
+        if (e.exponent == (1 << e.e_bits) - 1 && e.mantissa == 0) {
+            return std::numeric_limits<float>::infinity() * (e.sign ? -1.0f : 1.0f);
+        }
+        if (e.exponent == (1 << e.e_bits) - 1 && e.mantissa != 0) {
+
+            return std::numeric_limits<float>::quiet_NaN() * (e.sign ? -1.0f : 1.0f);
+        }
+        int32_t fpX_exponent_unbiased = e.exponent - ((1 << (e.e_bits - 1)) - 1);
+        int32_t fp32_exponent_biased = fpX_exponent_unbiased + 127;
+        uint32_t fp32_mantissa = e.mantissa << (23 - e.m_bits);
+        uint32_t fp32_bits = (e.sign ? 1u : 0u) << 31 | fp32_exponent_biased << 23 | fp32_mantissa;
+        return bitsToFloat(fp32_bits);
     }
 
     // Print FpType in a readable format
@@ -62,9 +102,9 @@ public:
         // Determine special cases
         if (e.exponent == 0 && e.mantissa == 0) {
             std::cout << " [zero]";
-        } else if (e.exponent == ((1 << e.e_bits) - 1) && e.mantissa == 0) {
+        } else if (e.exponent == 0xFF && e.mantissa == 0) {
             std::cout << " [inf]";
-        } else if (e.exponent == ((1 << e.e_bits) - 1) && e.mantissa != 0) {
+        } else if (e.exponent == 0xFF && e.mantissa != 0) {
             std::cout << " [nan]";
         }
         

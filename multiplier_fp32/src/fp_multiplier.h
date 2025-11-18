@@ -76,12 +76,17 @@ public:
         uint32_t exponent = sum_exponent - 127 + normalised + renormalized;
         
         // Overflow detection: If overall exponent is greater (or equal) to 255 then Overflow condition
-        bool exp_gt_255 = (exponent >> 8) & 1;  // >255 ⇒ bit8=1
-        bool exp_eq_255 = !((exponent >> 8) & 1) && ((exponent & 0xFF) == 0xFF);  // 255 ⇒ bit8=0, rest=all 1
+        // Note: We need to exclude negative values (0x180-0x1FF) which have bit8=1 but bit7=1
+        // Overflow occurs when: (bit8=1 AND bit7=0, meaning >=256) OR (exponent = 255 exactly)
+        // Values 0x100-0x17F (256-383) are overflow, values 0x180-0x1FF (384-511, signed: -128 to -1) are underflow
+        bool exp_gt_255 = ((exponent >> 8) & 1) && !((exponent >> 7) & 1);  // >255: bit8=1 AND bit7=0 (values 256-383)
+        bool exp_eq_255 = !((exponent >> 8) & 1) && ((exponent & 0xFF) == 0xFF);  // 255: bit8=0, all lower bits=1
         bool overflow = !zero && (exp_gt_255 || exp_eq_255);
         
         // Underflow detection: If sum of both exponents is less than 127 then Underflow condition
-        bool underflow = ((exponent >> 8) & (exponent >> 7)) && !zero;
+        // Negative values in 9-bit two's complement: 0x180-0x1FF (384-511, represents -128 to -1)
+        // These have bit8=1 AND bit7=1
+        bool underflow = ((exponent >> 8) & 1) && ((exponent >> 7) & 1) && !zero;
         
         // Final result - IEEE-754 priority order
         if (overflow) {
@@ -120,7 +125,7 @@ public:
 class FpMultiplierGolden : public FpMultiplier {
 public:
     FpType run(const FpType &a, const FpType &b) override {
-        return FpUtil::fromFloat(FpUtil::toFloat(a) * FpUtil::toFloat(b));
+        return FpUtil::fromFloat(FpUtil::toFloat(a) * FpUtil::toFloat(b), a.m_bits, a.e_bits);
     }
 };
 
