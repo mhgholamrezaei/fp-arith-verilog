@@ -8,21 +8,15 @@ echo "================================="
 cd "$(dirname "$0")/.."
 
 # Remove Verilator build directory
-if [ -d "../obj_dir" ]; then
+if [ -d "./obj_dir" ]; then
     echo "Removing obj_dir..."
-    rm -rf ../obj_dir
+    rm -rf ./obj_dir
 fi
 
 # Remove VCD directory
-if [ -d "../vcd" ]; then
+if [ -d "./vcd" ]; then
     echo "Removing vcd..."
-    rm -rf ../vcd
-fi
-
-# Remove any standalone executables
-if [ -f "./multiplier_fp8_test" ]; then
-    echo "Removing multiplier_fp8_test executable..."
-    rm -f ./multiplier_fp8_test
+    rm -rf ./vcd
 fi
 
 # Remove test output logs

@@ -1,10 +1,10 @@
 #!/bin/bash
-# fp32_multiplier/scripts/clean.sh - Clean FP32 multiplier project build artifacts
+# fp8_adder/scripts/clean.sh - Clean FP8 adder project build artifacts
 
-echo "Cleaning FP32 Multiplier Project"
-echo "================================="
+echo "Cleaning FP8 Adder Project"
+echo "=========================="
 
-# Change to the multiplier module directory
+# Change to the adder module directory
 cd "$(dirname "$0")/.."
 
 # Remove Verilator build directory
@@ -25,4 +25,4 @@ if [ -f "./test_output.log" ]; then
     rm -f ./test_output.log
 fi
 
-echo "Multiplier clean completed successfully!"
+echo "Adder clean completed successfully!"

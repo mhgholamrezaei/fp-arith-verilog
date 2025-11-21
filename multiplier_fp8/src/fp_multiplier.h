@@ -152,7 +152,7 @@ public:
 class FpMultiplierGolden : public FpMultiplier {
 public:
     FpType run(const FpType &a, const FpType &b) override {
-        return FpUtil::fromFloat(FpUtil::toFloat(a) * FpUtil::toFloat(b));
+        return FpUtil::fromFloat(FpUtil::toFloat(a) * FpUtil::toFloat(b), a.m_bits, a.e_bits);
     }
 };
 
