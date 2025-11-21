@@ -1,4 +1,4 @@
-module right_shifter(
+module right_shifter_24(
     input [23:0] in,
     input [4:0] shift_amt,
     input [2:0] upper_exp_bits,

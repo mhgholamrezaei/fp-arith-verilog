@@ -1,4 +1,4 @@
-module left_shifter(
+module left_shifter_23(
     input [22:0] in,
     input [4:0] shift_amt,
     output [22:0] out

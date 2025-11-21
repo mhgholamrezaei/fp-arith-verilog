@@ -18,7 +18,7 @@ SHARED_VSRC = ../shared/vsrc
 SHARED_SRC = ../shared/src
 
 # Source files
-VERILOG_SOURCES = $(VSRC_DIR)/adder_fp32.v  $(VSRC_DIR)/leading_one_detector.v $(VSRC_DIR)/right_shifter.v $(VSRC_DIR)/left_shifter.v $(SHARED_VSRC)/adder_nbit_cin.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
+VERILOG_SOURCES = $(VSRC_DIR)/adder_fp32.v  $(SHARED_VSRC)/leading_one_detector_32.v $(SHARED_VSRC)/right_shifter_24.v $(SHARED_VSRC)/left_shifter_23.v $(SHARED_VSRC)/adder_nbit_cin.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
 CPP_SOURCES = $(SRC_DIR)/fp_adder_test.cpp
 
 # Output directories (relative to module directory)
@@ -42,32 +42,6 @@ $(MAIN_TARGET): $(VERILOG_SOURCES) $(CPP_SOURCES) $(VCD_DIR)
 	cd $(OBJ_DIR) && make -f Vadder_fp32.mk
 	@echo "Adder build complete!"
 
-# Test targets
-test-random: $(MAIN_TARGET)
-	@echo "Running FP32 adder tests (100 random cases)..."
-	./$(MAIN_TARGET) -n 100
-
-test-basic: $(MAIN_TARGET)
-	@echo "Running FP32 adder tests (basic test vectors)..."
-	./$(MAIN_TARGET) -f $(TEST_VECTORS_DIR)/test_vectors_basic.txt
-
-test-edge: $(MAIN_TARGET)
-	@echo "Running FP32 adder tests (edge case vectors)..."
-	./$(MAIN_TARGET) -f $(TEST_VECTORS_DIR)/test_vectors_edge_cases.txt
-
-test-verbose: $(MAIN_TARGET)
-	@echo "Running FP32 adder tests (verbose output)..."
-	./$(MAIN_TARGET) -n 10 -v
-
-# Custom test with specific file
-test-file: $(MAIN_TARGET)
-	@if [ -z "$(FILE)" ]; then \
-		echo "Usage: make test-file FILE=path/to/test_vectors.txt"; \
-		exit 1; \
-	fi
-	@echo "Running FP32 adder tests with file: $(FILE)"
-	./$(MAIN_TARGET) -f $(FILE)
-
 # Clean build artifacts for this module only
 clean:
 	@echo "Cleaning FP32 adder build artifacts..."
@@ -77,7 +51,7 @@ clean:
 	@echo "Adder clean complete!"
 
 # Clean all build artifacts
-clean-all:
+clean:
 	@echo "Cleaning all build artifacts..."
 	rm -rf $(OBJ_DIR)
 	rm -rf $(VCD_DIR)
@@ -95,18 +69,9 @@ $(VCD_DIR):
 help:
 	@echo "FP32 Adder Module - Available targets:"
 	@echo "  all           - Build the FP32 adder test executable"
-	@echo "  test-random    - Run tests with 100 random cases"
-	@echo "  test-basic     - Run tests with basic test vectors"
-	@echo "  test-edge      - Run tests with edge case vectors"
-	@echo "  test-verbose   - Run tests with verbose output (10 cases)"
-	@echo "  test-file      - Run tests with custom file (use FILE=path)"
 	@echo "  clean          - Clean adder build artifacts only"
-	@echo "  clean-all      - Clean all build artifacts"
 	@echo "  help           - Show this help message"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make test-file FILE=test_vectors/test_vectors_basic.txt"
-	@echo "  make test-random"
-	@echo "  make test-basic"
 
-.PHONY: all test-random test-basic test-edge test-verbose test-file clean clean-all help
+.PHONY: all clean help

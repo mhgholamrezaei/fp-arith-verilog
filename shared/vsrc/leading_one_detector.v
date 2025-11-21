@@ -1,7 +1,7 @@
 /* verilator lint_off DECLFILENAME */
 /* verilator lint_off UNUSEDSIGNAL */
 
-module leading_one_detector (
+module leading_one_detector_32 (
     input  [31:0] x,
     output [4:0]  n
 );

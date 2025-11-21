@@ -63,7 +63,7 @@ module adder_fp32
 
     // Step 3: Shift the smaller mantissa by the difference in exponents
     wire [23:0] smaller_mantissa_shifted;
-    right_shifter right_shifter_inst (
+    right_shifter_24 right_shifter_inst (
         .in(smaller_mantissa),
         .shift_amt(exp_diff_abs[4:0]),
         .upper_exp_bits(exp_diff_abs[7:5]),
@@ -86,14 +86,14 @@ module adder_fp32
     // Step 6: Normalize the result
     // find the position of the leading 1 in the M_sub_add_result[23:0] and shift the result left by the position
     wire [4:0] leading_1_position_tmp, leading_1_position;
-    leading_one_detector leading_one_detector_inst (
+    leading_one_detector_32 leading_one_detector_inst (
         .x({8'b0, mantissa_sub_add_result[23:0]}),
         .n(leading_1_position_tmp)
     );
     assign leading_1_position = (leading_1_position_tmp == 5'd31) ? 5'd0 : (leading_1_position_tmp - 5'd8);
 
     wire [22:0] mantissa_sub_normalized_shifted;
-    left_shifter left_shifter_inst (
+    left_shifter_23 left_shifter_inst (
         .in(mantissa_sub_add_result[22:0]),
         .shift_amt(leading_1_position),
         .out(mantissa_sub_normalized_shifted)

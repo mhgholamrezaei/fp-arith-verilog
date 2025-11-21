@@ -19,12 +19,6 @@ if [ -d "../vcd" ]; then
     rm -rf ../vcd
 fi
 
-# Remove any standalone executables
-if [ -f "./adder_fp32_test" ]; then
-    echo "Removing adder_fp32_test executable..."
-    rm -f ./adder_fp32_test
-fi
-
 # Remove test output logs
 if [ -f "./test_output.log" ]; then
     echo "Removing test output log..."
