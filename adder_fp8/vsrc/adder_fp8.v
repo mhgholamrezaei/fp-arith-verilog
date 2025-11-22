@@ -17,6 +17,7 @@ module adder_fp8
     wire a_is_zero = ~|a[6:4] & ~|a[3:0];
     wire b_is_zero = ~|b[6:4] & ~|b[3:0];
     wire is_zero = a_is_zero & b_is_zero;
+   
 
     // nan detection: NaN occurs when either operand is NaN (exp=255 with non-zero mantissa)
     wire a_is_nan = (&a[6:4]) & (|a[3:0]);
@@ -90,7 +91,7 @@ module adder_fp8
         .x({3'b0, mantissa_sub_add_result[4:0]}),
         .n(leading_1_position_tmp)
     );
-    assign leading_1_position = (leading_1_position_tmp == 3'd7) ? 3'd0 : (leading_1_position_tmp - 3'd1);
+    assign leading_1_position = (leading_1_position_tmp == 3'd7) ? 3'd0 : (leading_1_position_tmp - 3'd3);
 
     wire [3:0] mantissa_sub_normalized_shifted;
     left_shifter_4 left_shifter_inst (
@@ -100,7 +101,7 @@ module adder_fp8
     );
 
     wire do_right_shift = mantissa_sub_add_result[5] ? 1'b1 : 1'b0;    
-    wire [3:0] mantissa_add_normalized = do_right_shift ? mantissa_sub_add_result[3:0] : mantissa_sub_add_result[3:0];
+    wire [3:0] mantissa_add_normalized = do_right_shift ? mantissa_sub_add_result[4:1] : mantissa_sub_add_result[3:0];
     wire [3:0] result_mantissa = operation_add ? mantissa_add_normalized : mantissa_sub_normalized_shifted[3:0];
 
     // Step 7: Calculate the exponent
@@ -116,7 +117,7 @@ module adder_fp8
     );
 
     // Step 8: Compute the sign
-    wire result_sign = operation_add ? a_sign : (larger_sign ^ mantissa_sub_add_result[4]);
+    wire result_sign = operation_add ? a_sign : (larger_sign ^ mantissa_sub_add_result[5]);
 
     // Step 9: Handle overflow and underflow
     wire overflow = (result_exp == 3'd7);
