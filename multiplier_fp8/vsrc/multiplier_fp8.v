@@ -43,7 +43,7 @@ module multiplier_fp8
     wire [4:0] a_significand = (|a[6:4]) ? {1'b1, a[3:0]} : {1'b0, a[3:0]};
     wire [4:0] b_significand = (|b[6:4]) ? {1'b1, b[3:0]} : {1'b0, b[3:0]};
     
-    // Calculate product (24x24 -> 48-bit) using custom multiplier
+    // Calculate product (5x5 -> 10-bit) using custom multiplier
     wire [9:0] product;
     multiplier_nbit_full #(.WIDTH(5), .IMPL_TYPE(IMPL_TYPE)) u_multiplier (
         .A(a_significand),

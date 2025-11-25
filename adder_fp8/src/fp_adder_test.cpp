@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
 
     // Call tester class to run the test
     FpAdderTester tester;
-    FpAdder* fp_adder_under_test = new FpAdderVerilog();
+    FpAdder* fp_adder_under_test = new FpAdderEmulation();
     FpAdder* fp_adder_golden = new FpAdderGolden();
     int result = 0;
     if (filename.empty()) {
