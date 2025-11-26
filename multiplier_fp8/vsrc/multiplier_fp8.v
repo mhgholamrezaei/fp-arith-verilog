@@ -98,9 +98,9 @@ module multiplier_fp8
         .Cin(1'b0),
         .Sum(exponent_tmp1)
     );
-    adder_nbit_cin #(.WIDTH(9)) u_exp_kext_adder (
+    adder_nbit_cin #(.WIDTH(4)) u_exp_kext_adder (
         .A(exponent_tmp1),
-        .B(k_ext),      // k_ext is 8 bits, pad to 9
+        .B(k_ext),      // k_ext is 4 bits, pad to 4
         .Cin(1'b0),
         .Sum(exponent)
     );
