@@ -105,7 +105,7 @@ module multiplier_fp8
         .Sum(exponent)
     );
     
-    // Overflow detection: If overall exponent is greater (or equal) to 255 then Overflow condition
+    // Overflow detection: If overall exponent is greater (or equal) to 7 then Overflow condition
     wire exp_gt_7 = exponent[3] & ~exponent[2];   // >7: bit4=1 AND bit3=0 
     wire exp_eq_7 = ~exponent[3] & (&exponent[2:0]); // 7: bit4=0, all lower bits=1
     wire is_overflow = !is_zero & (exp_gt_7 | exp_eq_7);
