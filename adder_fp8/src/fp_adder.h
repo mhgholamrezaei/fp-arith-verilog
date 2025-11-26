@@ -114,7 +114,7 @@ public:
                 }
             }
             
-            if (leading_1_position == 0 && temp_mantissa == 0) {
+            if (leading_1_position == 0 && mantissa_sub_add_result == 0) {
                 // Result is zero
                 return FpType(a_sign, 0x0, 0x0, 4, 3);
             }

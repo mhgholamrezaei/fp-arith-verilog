@@ -50,18 +50,18 @@ public:
         uint8_t b_exp = b.exponent;
         uint32_t a_mantissa = a.mantissa;
         uint32_t b_mantissa = b.mantissa;
-        
+
         // Add hidden bit for normalized numbers
-        uint32_t a_mantissa_5 = a_is_zero ? a_mantissa : (0x400 | a_mantissa);
-        uint32_t b_mantissa_5 = b_is_zero ? b_mantissa : (0x400 | b_mantissa);
+        uint32_t a_mantissa_11 = a_is_zero ? a_mantissa : (0x400 | a_mantissa);
+        uint32_t b_mantissa_11 = b_is_zero ? b_mantissa : (0x400 | b_mantissa);
         
         // Step 2: Compute the difference in exponents
         int16_t exp_diff = static_cast<int16_t>(a_exp) - static_cast<int16_t>(b_exp);
         bool swap_exp = exp_diff < 0;
         
         uint8_t larger_exp = swap_exp ? b_exp : a_exp;
-        uint32_t larger_mantissa = swap_exp ? b_mantissa_5 : a_mantissa_5;
-        uint32_t smaller_mantissa = swap_exp ? a_mantissa_5 : b_mantissa_5;
+        uint32_t larger_mantissa = swap_exp ? b_mantissa_11 : a_mantissa_11;
+        uint32_t smaller_mantissa = swap_exp ? a_mantissa_11 : b_mantissa_11;
         bool larger_sign = swap_exp ? b_sign : a_sign;
         
         uint8_t exp_diff_abs = swap_exp ? (-exp_diff) : exp_diff;
@@ -114,7 +114,7 @@ public:
                 }
             }
             
-            if (leading_1_position == 0 && temp_mantissa == 0) {
+            if (leading_1_position == 0 && mantissa_sub_add_result == 0) {
                 // Result is zero
                 return FpType(a_sign, 0x0, 0x0, 10, 5);
             }
