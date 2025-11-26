@@ -1,0 +1,7 @@
+# Edge case combinations
+1.17549e-38 inf
+inf 1.17549e-38
+1.17549e-38 nan
+nan 1.17549e-38
+3.40282e+38 nan
+nan 3.40282e+38
