@@ -5,7 +5,7 @@
 #ifdef VERILATOR
 #include "verilated.h"
 #include "verilated_vcd_c.h"
-#include "Vadder_fp8.h"
+#include "Vadder_fp16.h"
 #endif
 
 // Abstract base class for floating-point adders
@@ -19,8 +19,8 @@ public:
     // Add with special-case handling for zero, infinity, NaN, overflow, and underflow
     FpType run(const FpType &a, const FpType &b) override {
         // Step 0: Special cases
-        bool a_is_infinity = (a.exponent == 0x7);
-        bool b_is_infinity = (b.exponent == 0x7);
+        bool a_is_infinity = (a.exponent == 0x1F);
+        bool b_is_infinity = (b.exponent == 0x1F);
         bool is_infinity = a_is_infinity || b_is_infinity;
         
         bool a_is_zero = (a.exponent == 0) && (a.mantissa == 0);
@@ -28,19 +28,19 @@ public:
         bool is_zero = a_is_zero && b_is_zero;
         
         // NaN detection: NaN occurs when either operand is NaN (exp=255 with non-zero mantissa)
-        bool a_is_nan = (a.exponent == 0x7) && (a.mantissa != 0);
-        bool b_is_nan = (b.exponent == 0x7) && (b.mantissa != 0);
+        bool a_is_nan = (a.exponent == 0x1F) && (a.mantissa != 0);
+        bool b_is_nan = (b.exponent == 0x1F) && (b.mantissa != 0);
         bool is_nan = a_is_nan || b_is_nan || (a_is_infinity && b_is_infinity && (a.sign != b.sign));
 
         // Handle special cases
         if (is_nan) {
-            return FpType(false, 0x7, 0x8, 4, 3); // NaN
+            return FpType(false, 0x1F, 0x200, 10, 5); // NaN
         }
         if (is_infinity) {
-            return FpType(a_is_infinity ? a.sign : b.sign, 0x7, 0x0, 4, 3); // Infinity
+            return FpType(a_is_infinity ? a.sign : b.sign, 0x1F, 0x0, 10, 5); // Infinity
         }
         if (is_zero) {
-            return FpType(a.sign, 0x0, 0x0, 4, 3); // Zero
+            return FpType(a.sign, 0x0, 0x0, 10, 5); // Zero
         }
         
         // Step 1: Extract sign, exponent, and mantissa from inputs
@@ -52,8 +52,8 @@ public:
         uint32_t b_mantissa = b.mantissa;
         
         // Add hidden bit for normalized numbers
-        uint32_t a_mantissa_5 = a_is_zero ? a_mantissa : (0x10 | a_mantissa);
-        uint32_t b_mantissa_5 = b_is_zero ? b_mantissa : (0x10 | b_mantissa);
+        uint32_t a_mantissa_5 = a_is_zero ? a_mantissa : (0x400 | a_mantissa);
+        uint32_t b_mantissa_5 = b_is_zero ? b_mantissa : (0x400 | b_mantissa);
         
         // Step 2: Compute the difference in exponents
         int16_t exp_diff = static_cast<int16_t>(a_exp) - static_cast<int16_t>(b_exp);
@@ -68,7 +68,7 @@ public:
         
         // Step 3: Shift the smaller mantissa by the difference in exponents
         uint32_t smaller_mantissa_shifted;
-        if (exp_diff_abs >= 5) {
+        if (exp_diff_abs >= 11) {
             smaller_mantissa_shifted = 0; // Shifted out completely
         } else {
             smaller_mantissa_shifted = smaller_mantissa >> exp_diff_abs;
@@ -89,38 +89,38 @@ public:
         
         // Step 6: Normalize the result
         uint32_t result_mantissa;
-        uint8_t result_exp;
+        uint16_t result_exp;
         
         if (operation_add) {
             // For addition, check if we need to shift right (overflow)
-            bool do_right_shift = (mantissa_sub_add_result & 0x20) != 0;
+            bool do_right_shift = (mantissa_sub_add_result & 0x800) != 0;
             if (do_right_shift) {
-                result_mantissa = (mantissa_sub_add_result >> 1) & 0xF;
+                result_mantissa = (mantissa_sub_add_result >> 1) & 0x3FF;
                 result_exp = larger_exp + 1;
             } else {
-                result_mantissa = mantissa_sub_add_result & 0xF;
+                result_mantissa = mantissa_sub_add_result & 0x3FF;
                 result_exp = larger_exp;
             }
         } else {
             // For subtraction, find leading 1 and normalize
-            uint32_t temp_mantissa = mantissa_sub_add_result & 0x1F;
+            uint32_t temp_mantissa = mantissa_sub_add_result & 0x3FF;
             uint8_t leading_1_position = 0;
             
             // Find leading 1 position (priority encoder)
-            for (int i = 4; i >= 0; i--) {
+            for (int i = 10; i >= 0; i--) {
                 if ((temp_mantissa >> i) & 1) {
-                    leading_1_position = 4 - i;
+                    leading_1_position = 10 - i;
                     break;
                 }
             }
             
             if (leading_1_position == 0 && temp_mantissa == 0) {
                 // Result is zero
-                return FpType(a_sign, 0x0, 0x0, 4, 3);
+                return FpType(a_sign, 0x0, 0x0, 10, 5);
             }
             
             // Normalize by shifting left
-            result_mantissa = (temp_mantissa << leading_1_position) & 0xF;
+            result_mantissa = (temp_mantissa << leading_1_position) & 0x3FF;
             result_exp = larger_exp - leading_1_position;
         }
         
@@ -129,39 +129,39 @@ public:
         if (operation_add) {
             result_sign = a_sign;
         } else {
-            result_sign = larger_sign ^ ((mantissa_sub_add_result & 0x20) != 0);
+            result_sign = larger_sign ^ ((mantissa_sub_add_result & 0x800) != 0);
         }
         
         // Step 8: Handle overflow and underflow
-        if (result_exp >= 0x7) {
+        if (result_exp >= 0x1F) {
             // Overflow
-            return FpType(result_sign, 0x7, 0x0, 4, 3);
+            return FpType(result_sign, 0x1F, 0x0, 10, 5);
         }
-        if (result_exp == 0 || (mantissa_sub_add_result & 0x20 && !operation_add)) {
+        if (result_exp == 0 || (mantissa_sub_add_result & 0x800 && !operation_add)) {
             // Underflow
-            return FpType(result_sign, 0x0, 0x0, 4, 3);
+            return FpType(result_sign, 0x0, 0x0, 10, 5);
         }
         
         // Step 9: Return normal result
-        return FpType(result_sign, result_exp, result_mantissa, 4, 3);
+        return FpType(result_sign, result_exp, result_mantissa, 10, 5);
     }
 };
 
 #ifdef VERILATOR
 class FpAdderVerilog : public FpAdder {
 private:
-    Vadder_fp8* dut;
+    Vadder_fp16* dut;
     VerilatedVcdC* vcd;
     uint64_t sim_time;
     
 public:
-    FpAdderVerilog() : dut(new Vadder_fp8()), vcd(nullptr), sim_time(0) {
+    FpAdderVerilog() : dut(new Vadder_fp16()), vcd(nullptr), sim_time(0) {
         // Initialize VCD tracing
         Verilated::traceEverOn(true);
         vcd = new VerilatedVcdC();
         dut->trace(vcd, 99);
-        std::cout << "INFO: Opening VCD file: vcd/adder_fp8_test.vcd" << std::endl;
-        vcd->open("vcd/adder_fp8_test.vcd");
+        std::cout << "INFO: Opening VCD file: vcd/adder_fp16_test.vcd" << std::endl;
+        vcd->open("vcd/adder_fp16_test.vcd");
         std::cout << "INFO: VCD file opened successfully" << std::endl;
     }
     
@@ -175,12 +175,12 @@ public:
     
     FpType run(const FpType &a, const FpType &b) override {
          // Convert FpType to IEEE-754 bit representation
-        uint8_t a_bits = (a.sign ? 1u : 0u) << (a.m_bits + a.e_bits);
+        uint16_t a_bits = (a.sign ? 1u : 0u) << (a.m_bits + a.e_bits);
         a_bits |= (a.exponent & ((1 << a.e_bits) - 1)) << a.m_bits;
         a_bits |= a.mantissa & ((1 << a.m_bits) - 1);
 
 
-        uint8_t b_bits = (b.sign ? 1u : 0u) << (b.m_bits + b.e_bits);
+        uint16_t b_bits = (b.sign ? 1u : 0u) << (b.m_bits + b.e_bits);
         b_bits |= (b.exponent & ((1 << b.e_bits) - 1)) << b.m_bits;
         b_bits |= b.mantissa & ((1 << b.m_bits) - 1);
         
@@ -196,7 +196,7 @@ public:
         vcd->flush();
 
         // Get result and convert back to FpType
-        uint8_t result_bits = dut->result;
+        uint16_t result_bits = dut->result;
         FpType result = FpType(result_bits >> (a.m_bits + a.e_bits),
             (result_bits >> a.m_bits) & ((1 << a.e_bits) - 1),
             result_bits & ((1 << a.m_bits) - 1),
