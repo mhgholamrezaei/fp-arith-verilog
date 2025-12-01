@@ -36,8 +36,3 @@
    ```bash
    ./scripts/clean.sh
    ```
-
-# TODO 
-- Add to PIMsynth
-- Support fp8 and fp16
-
