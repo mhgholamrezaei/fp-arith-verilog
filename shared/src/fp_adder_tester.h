@@ -1,14 +1,13 @@
-#include "../../shared/src/fp_utils.h"
+#include "fp_utils.h"
 #include "fp_adder.h"
 #include <utility>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <limits>
-#include <random>
 #include <clocale> // For setlocale
-#include <unistd.h> // For getopt
+#include <cstdlib> // For srand and rand
+
 
 // Test class for floating-point addition
 class FpAdderTester {
@@ -18,9 +17,11 @@ private:
     std::uniform_real_distribution<float> dis;
     float max_float = std::numeric_limits<float>::max();
     float min_float = -std::numeric_limits<float>::max();
+    int e_bits = 4;
+    int m_bits = 3;
 
 public:
-    FpAdderTester() : gen(rd()), dis(min_float, max_float) {
+    FpAdderTester(int e_bits = 4, int m_bits = 3) : gen(rd()), dis(min_float, max_float), e_bits(e_bits), m_bits(m_bits) {
         srand(time(NULL));
     }
 
@@ -147,8 +148,8 @@ public:
         int errors = 0;
         uint32_t i = 0;
         for (const auto& test_pair : test_vectors) {
-            FpType a = FpUtil::fromFloat(test_pair.first, 10, 5);
-            FpType b = FpUtil::fromFloat(test_pair.second, 10, 5);
+            FpType a = FpUtil::fromFloat(test_pair.first, e_bits, m_bits);
+            FpType b = FpUtil::fromFloat(test_pair.second, e_bits, m_bits);
             FpType z = fp_adder_under_test.run(a, b);
             FpType z_golden = fp_adder_golden.run(a, b);
             // compare results
@@ -178,55 +179,3 @@ public:
         return run(fp_adder_under_test, fp_adder_golden, test_vectors, verbose);
     }
 };
-
-// read command line arguments using getopt in a function
-void read_command_line_arguments(int argc, char* argv[], int& test_number, std::string& filename, bool& verbose) {
-    int c;
-    while ((c = getopt(argc, argv, "f:n:hv")) != -1) {
-        switch (c) {
-            case 'f':
-                filename = optarg;
-                break;
-            case 'n':
-                test_number = std::stoi(optarg);
-                break;
-            case 'v':
-                verbose = true;
-                break;
-            case 'h':
-                std::cout << "Usage: ./fp16_adder_test [-f <filename>] [-n <test_number>] [-v]" << std::endl;
-                std::cout << "  -f <filename>     Use custom test vectors from file" << std::endl;
-                std::cout << "  -n <test_number>  Use specified number of random test vectors (default=10000)" << std::endl;
-                std::cout << "  -v                Verbose output (show all test results)" << std::endl;
-                std::cout << "  -h                Show this help message" << std::endl;
-            default:
-                exit(0);
-        }
-    }
-}
-
-int main(int argc, char* argv[]) {
-    // read command line arguments using getopt in a function
-    int test_number = 1;
-    std::string filename = "";
-    bool verbose = false;
-    read_command_line_arguments(argc, argv, test_number, filename, verbose);
-
-    // Call tester class to run the test
-    FpAdderTester tester;
-    FpAdder* fp_adder_under_test = new FpAdderVerilog();
-    FpAdder* fp_adder_golden = new FpAdderGolden();
-    int result = 0;
-    if (filename.empty()) {
-        result = tester.run(*fp_adder_under_test, *fp_adder_golden, test_number, verbose);
-    } else {
-        result = tester.run(*fp_adder_under_test, *fp_adder_golden, filename, verbose);
-    }
-
-    // Clean up
-    delete fp_adder_under_test;
-    delete fp_adder_golden;
-    
-    std::cout << "INFO: Tests completed. VCD file should be generated." << std::endl;
-    return result;
-}

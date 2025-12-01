@@ -19,7 +19,7 @@ SHARED_SRC = ../shared/src
 
 # Source files
 VERILOG_SOURCES = $(VSRC_DIR)/adder_fp16.v  $(SHARED_VSRC)/leading_one_detector_16.v $(SHARED_VSRC)/right_shifter_11.v $(SHARED_VSRC)/left_shifter_10.v $(SHARED_VSRC)/adder_nbit_cin.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
-CPP_SOURCES = $(SRC_DIR)/fp_adder_test.cpp
+CPP_SOURCES = $(SRC_DIR)/main.cpp
 
 # Output directories (relative to module directory)
 OBJ_DIR = obj_dir
@@ -35,9 +35,9 @@ all: $(MAIN_TARGET)
 $(MAIN_TARGET): $(VERILOG_SOURCES) $(CPP_SOURCES) $(VCD_DIR)
 	@echo "Building FP16 adder test with Verilator..."
 	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_TOP) \
-		-CFLAGS "-I../shared/src" \
+		-CFLAGS "-I../../shared/src -I. -I$(OBJ_DIR) -DVERILATOR_FP16" \
 		$(VERILOG_SOURCES) \
-		$(SRC_DIR)/fp_adder_test.cpp -o adder_fp16_test
+		$(CPP_SOURCES) -o adder_fp16_test
 	@echo "Compiling..."
 	cd $(OBJ_DIR) && make -f Vadder_fp16.mk
 	@echo "Adder build complete!"
