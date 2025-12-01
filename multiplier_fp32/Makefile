@@ -20,7 +20,7 @@ SHARED_SRC = ../shared/src
 # Source files
 VERILOG_SOURCES = $(VSRC_DIR)/multiplier_fp32.v $(SHARED_VSRC)/multiplier_nbit_full.v \
                   $(SHARED_VSRC)/adder_nbit_cin.v $(SHARED_VSRC)/adder_1bit.v $(SHARED_VSRC)/maj3.v
-CPP_SOURCES = $(SRC_DIR)/fp_multiplier_test.cpp
+CPP_SOURCES = $(SRC_DIR)/main.cpp
 
 # Output directories (relative to module directory)
 OBJ_DIR = obj_dir
@@ -36,9 +36,9 @@ all: $(MAIN_TARGET)
 $(MAIN_TARGET): $(VERILOG_SOURCES) $(CPP_SOURCES) $(VCD_DIR)
 	@echo "Building FP32 multiplier test with Verilator..."
 	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_TOP) \
-		-CFLAGS "-I../shared/src" \
+		-CFLAGS "-I../../shared/src -I. -I$(OBJ_DIR) -DVERILATOR_FP32" \
 		$(VERILOG_SOURCES) \
-		$(SRC_DIR)/fp_multiplier_test.cpp -o $(MAIN_TARGET) 
+		$(CPP_SOURCES) -o $(MAIN_TARGET) 
 	@echo "Compiling..."
 	cd $(OBJ_DIR) && make -f Vmultiplier_fp32.mk
 	@echo "Multiplier build complete!"

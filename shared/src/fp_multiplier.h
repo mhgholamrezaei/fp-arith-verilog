@@ -5,7 +5,15 @@
 #ifdef VERILATOR
 #include "verilated.h"
 #include "verilated_vcd_c.h"
+#ifdef VERILATOR_FP8
 #include "Vmultiplier_fp8.h"
+#endif
+#ifdef VERILATOR_FP32
+#include "Vmultiplier_fp32.h"
+#endif
+#ifdef VERILATOR_FP16
+#include "Vmultiplier_fp16.h"
+#endif
 #endif
 
 // Abstract base class for floating-point multipliers
@@ -28,9 +36,13 @@ public:
         // Sign calculation
         result.sign = a.sign ^ b.sign;
         
+        // constants
+        uint32_t max_exponent = (1 << a.e_bits) - 1;
+        uint32_t max_mantissa = (1 << a.m_bits) - 1;
+
         // Exception flag sets 1 if either one of the exponent is 7 (all 3 exponent bits set)
-        bool a_is_exception = (a.exponent == 0x7);
-        bool b_is_exception = (b.exponent == 0x7);
+        bool a_is_exception = (a.exponent == max_exponent);
+        bool b_is_exception = (b.exponent == max_exponent);
         bool exception = a_is_exception || b_is_exception;
         
         // Zero detection: exp==0 && mant==0
@@ -38,84 +50,62 @@ public:
         bool b_is_zero = (b.exponent == 0) && (b.mantissa == 0);
         
         // NaN detection: NaN occurs when either operand is NaN (exp=7 with non-zero mantissa)
-        bool a_is_nan = (a.exponent == 0x7) && (a.mantissa != 0);
-        bool b_is_nan = (b.exponent == 0x7) && (b.mantissa != 0);
+        bool a_is_nan = (a.exponent == max_exponent) && (a.mantissa != 0);
+        bool b_is_nan = (b.exponent == max_exponent) && (b.mantissa != 0);
         bool nan = a_is_nan || b_is_nan || (a_is_zero && b_is_exception) || (b_is_zero && a_is_exception);
         
         // Handle NaN case (highest priority)
         if (nan) {
-            result.exponent = 0x7;
-            result.mantissa = 0x8; // Quiet NaN payload
+            result.exponent = max_exponent;
+            result.mantissa = (1 << (a.m_bits - 1)); // Quiet NaN payload
             return result;
         }
         
         // Assigning significand values according to Hidden Bit
-        // 5 bits: 1 hidden + 4 mantissa bits
-        // Verilog: (|a[6:4]) ? {1'b1, a[3:0]} : {1'b0, a[3:0]}
-        // This means: if any exponent bit is set, add hidden bit; otherwise don't
-        uint8_t operand_a = ((a.exponent & 0x7) != 0) ? (0x10 | (a.mantissa & 0xF)) : (a.mantissa & 0xF);
-        uint8_t operand_b = ((b.exponent & 0x7) != 0) ? (0x10 | (b.mantissa & 0xF)) : (b.mantissa & 0xF);
+        uint32_t operand_a = ((a.exponent & max_exponent) != 0) ? ((1 << a.m_bits) | (a.mantissa & max_mantissa)) : (a.mantissa & max_mantissa);
+        uint32_t operand_b = ((b.exponent & max_exponent) != 0) ? ((1 << b.m_bits) | (b.mantissa & max_mantissa)) : (b.mantissa & max_mantissa);
         
-        // Calculate product (5x5 -> 10-bit)
-        uint16_t product = (uint16_t)operand_a * (uint16_t)operand_b;
+        uint64_t product = (uint64_t)operand_a * (uint64_t)operand_b;
         
         // Normalization check
-        bool normalised = (product >> 9) & 1;
+        bool normalised = (product >> (2 * a.m_bits + 1)) & 1;
         
         // Adjust product if not normalized
-        uint16_t product_normalised = normalised ? product : product << 1;
+        uint64_t product_normalised = normalised ? product : product << 1;
         
-        // Product round: OR of all 10 bits [9:0] (matching Verilog line 55 exactly)
-        // Note: Verilog comment says "ending 9 bits" but code uses [9:0]
-        bool product_round = (product_normalised & 0x3FF) != 0;
+        bool product_round = (product_normalised & max_mantissa) != 0;
         
         // Final Mantissa with rounding
-        // Extract bits [8:5] as base mantissa
-        uint8_t base_mantissa = (product_normalised >> 5) & 0xF;
-        // Add 1 if bit[4] is set AND product_round (round to nearest)
-        // This matches Verilog: product_normalised[4] & product_round
-        uint8_t add_round = (((product_normalised >> 4) & 1) && product_round) ? 1 : 0;
-        uint8_t product_mantissa = base_mantissa + add_round;
+        uint64_t base_mantissa = (product_normalised >> (a.m_bits + 1)) & max_mantissa;
+        uint64_t add_round = ((product_normalised >> (a.m_bits)) & 1) & (product_round ? 1 : 0);
+        uint64_t product_mantissa = base_mantissa + add_round;
 
-        // Check for renormalization (if mantissa overflowed into 5th bit)
-        bool renormalized = (product_mantissa >> 4) & 1;
+        // Check for renormalization 
+        bool renormalized = (product_mantissa >> a.m_bits) & 1;
         
-        // Zero detection: check if upper 5 bits [9:5] are all zero
-        bool zero = exception ? false : ((product_normalised >> 5) == 0);
+        // Zero detection
+        bool zero = exception ? false : ((product_normalised >> (a.m_bits + 1)) == 0);
         
-        // Sum of exponents (4-bit addition)
-        uint8_t sum_exponent = (a.exponent & 0x7) + (b.exponent & 0x7);
+        // Sum of exponents
+        uint32_t sum_exponent = (a.exponent & max_exponent) + (b.exponent & max_exponent);
         
         // Final exponent calculation (4-bit arithmetic)
-        // exponent = sum_exponent - 3 + normalised + renormalized
-        // -3 in 4-bit two's complement is 0xD
-        uint8_t bias = 0xD; // -3 in 4 bits
-        // k = {normalised & renormalized, normalised ^ renormalized} (2 bits, range 0..2)
-        uint8_t k = ((normalised & renormalized) << 1) | (normalised ^ renormalized);
-        uint8_t k_ext = k & 0x3;
-        
-        // Calculate: exponent = sum_exponent + bias + k_ext (in 4-bit arithmetic)
-        uint8_t exponent_tmp1 = (sum_exponent + bias) & 0xF;
-        uint8_t exponent = (exponent_tmp1 + k_ext) & 0xF;
-        
+        // exponent = sum_exponent - bias + normalised + renormalized
+        int32_t bias = -((1 << (a.e_bits - 1)) - 1); 
+        uint32_t exponent = (uint32_t)((int32_t)sum_exponent + bias + (int32_t)renormalized + (int32_t)normalised); 
+
         // Overflow detection: If overall exponent is greater (or equal) to 7 then Overflow condition
-        // Note: We need to exclude negative values (0xC-0xF) which have bit3=1 and bit2=1
-        // Overflow occurs when: (bit3=1 AND bit2=0, meaning >=8) OR (exponent = 7 exactly)
-        // Values 0x8-0xB (8-11) are overflow, values 0xC-0xF (12-15, signed: -4 to -1) are underflow
-        bool exp_gt_7 = ((exponent >> 3) & 1) && !((exponent >> 2) & 1);  // >7: bit3=1 AND bit2=0 (values 8-11)
-        bool exp_eq_7 = !((exponent >> 3) & 1) && ((exponent & 0x7) == 0x7);  // 7: bit3=0, all lower bits=1
+        bool exp_gt_7 = ((exponent >> a.e_bits) & 1) && !((exponent >> (a.e_bits - 1)) & 1);  // >7: bit(a.e_bits)=1 AND bit(a.e_bits-1)=0
+        bool exp_eq_7 = !((exponent >> a.e_bits) & 1) && ((exponent & max_exponent) == max_exponent);  // 7: bit(a.e_bits)=0, all lower bits=1
         bool overflow = !zero && (exp_gt_7 || exp_eq_7);
         
-        // Underflow detection: If exponent is negative (in 4-bit two's complement) then Underflow condition
-        // Negative values in 4-bit two's complement: 0xC-0xF (12-15, represents -4 to -1)
-        // These have bit3=1 AND bit2=1
-        bool underflow = ((exponent >> 3) & 1) && ((exponent >> 2) & 1) && !zero;
+        
+        // Underflow detection: If exponent is negative then Underflow condition
+        bool underflow = ((exponent >> a.e_bits) & 1) && ((exponent >> (a.e_bits - 1)) & 1) && !zero;
         
         // Final result - IEEE-754 priority order
-        // Note: Exception (infinity) must be handled AFTER overflow/underflow/zero checks
-        // because we need to calculate the product to check for NaN (inf * 0)
         if (overflow) {
-            result.exponent = 0x7;
+            result.exponent = max_exponent;
             result.mantissa = 0;
             return result;
         }
@@ -135,14 +125,14 @@ public:
         // Handle exception (infinity): inf * normal = inf, inf * inf = inf
         // (NaN case already handled at the top)
         if (exception) {
-            result.exponent = 0x7;
+            result.exponent = max_exponent;
             result.mantissa = 0;
             return result;
         }
         
         // Normal result
-        result.exponent = exponent & 0x7;
-        result.mantissa = product_mantissa & 0xF;
+        result.exponent = exponent & max_exponent;
+        result.mantissa = product_mantissa & max_mantissa;
         
         return result;
     }
@@ -160,19 +150,45 @@ public:
 // Verilog Testbench implementation
 class FpMultiplierVerilog : public FpMultiplier {
 private:
+    #ifdef VERILATOR_FP8
     Vmultiplier_fp8* dut;
+    #endif
+    #ifdef VERILATOR_FP32
+    Vmultiplier_fp32* dut;
+    #endif
+    #ifdef VERILATOR_FP16
+    Vmultiplier_fp16* dut;
+    #endif
     vluint64_t sim_time;
     VerilatedVcdC* trace;
     
 public:
     FpMultiplierVerilog() : sim_time(0), trace(nullptr) {
+        #ifdef VERILATOR_FP8
         dut = new Vmultiplier_fp8;
+        #endif
+        #ifdef VERILATOR_FP32
+        dut = new Vmultiplier_fp32;
+        #endif
+        #ifdef VERILATOR_FP16
+        dut = new Vmultiplier_fp16;
+        #endif
         // Initialize tracing
         Verilated::traceEverOn(true);
         trace = new VerilatedVcdC;
         dut->trace(trace, 99);
+        #ifdef VERILATOR_FP8
         std::cout << "INFO: Opening VCD file: vcd/multiplier_fp8_test.vcd" << std::endl;
         trace->open("vcd/multiplier_fp8_test.vcd");
+        #endif
+        #ifdef VERILATOR_FP16
+        std::cout << "INFO: Opening VCD file: vcd/multiplier_fp16_test.vcd" << std::endl;
+        trace->open("vcd/multiplier_fp16_test.vcd");
+        #endif
+        #ifdef VERILATOR_FP32
+        std::cout << "INFO: Opening VCD file: vcd/multiplier_fp32_test.vcd" << std::endl;
+        trace->open("vcd/multiplier_fp32_test.vcd");
+        #endif
         std::cout << "INFO: VCD file opened successfully" << std::endl;
     }
     
@@ -205,12 +221,28 @@ public:
     
     FpType run(const FpType &a, const FpType &b) override {
         // Convert FpType to IEEE-754 bit representation
+        #ifdef VERILATOR_FP8
         uint8_t a_bits = (a.sign ? 1u : 0u) << (a.m_bits + a.e_bits);
+        #endif
+        #ifdef VERILATOR_FP16
+        uint16_t a_bits = (a.sign ? 1u : 0u) << (a.m_bits + a.e_bits);
+        #endif
+        #ifdef VERILATOR_FP32
+        uint32_t a_bits = (a.sign ? 1u : 0u) << (a.m_bits + a.e_bits);
+        #endif
         a_bits |= (a.exponent & ((1 << a.e_bits) - 1)) << a.m_bits;
         a_bits |= a.mantissa & ((1 << a.m_bits) - 1);
 
 
+        #ifdef VERILATOR_FP8
         uint8_t b_bits = (b.sign ? 1u : 0u) << (b.m_bits + b.e_bits);
+        #endif
+        #ifdef VERILATOR_FP16
+        uint16_t b_bits = (b.sign ? 1u : 0u) << (b.m_bits + b.e_bits);
+        #endif
+        #ifdef VERILATOR_FP32
+        uint32_t b_bits = (b.sign ? 1u : 0u) << (b.m_bits + b.e_bits);
+        #endif
         b_bits |= (b.exponent & ((1 << b.e_bits) - 1)) << b.m_bits;
         b_bits |= b.mantissa & ((1 << b.m_bits) - 1);
         
@@ -221,7 +253,15 @@ public:
         clock_cycle();
         
         // Get result and convert back to FpType
+        #ifdef VERILATOR_FP8
         uint8_t result_bits = dut->result;
+        #endif
+        #ifdef VERILATOR_FP16
+        uint16_t result_bits = dut->result;
+        #endif
+        #ifdef VERILATOR_FP32
+        uint32_t result_bits = dut->result;
+        #endif
         FpType result = FpType(result_bits >> (a.m_bits + a.e_bits),
             (result_bits >> a.m_bits) & ((1 << a.e_bits) - 1),
             result_bits & ((1 << a.m_bits) - 1),
